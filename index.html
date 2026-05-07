@@ -472,7 +472,7 @@ function parsePlan(text) {
       html += `<div class="plan-section-label">Calorie & Macro Targets</div><div class="macro-card">`;
       continue;
     }
-line.match(/\d+-DAY MEAL PLAN/)      if (inMacroSection) { html += `</div>`; inMacroSection = false; }
+line.includes('DAY MEAL PLAN')      if (inMacroSection) { html += `</div>`; inMacroSection = false; }
       inDay = false; inGrocery = false; inTips = false;
       html += `<div class="plan-section-label">7-Day Meal Plan</div>`;
       continue;
