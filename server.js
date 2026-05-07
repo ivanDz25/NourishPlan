@@ -74,8 +74,8 @@ app.post('/api/generate', async (req, res) => {
 // Send plan via Resend
 async function sendEmail(clientData, planText) {
   const resendKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.FROM_EMAIL || 'plans@nourishplan.co';
-
+const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+  
   const htmlBody = buildEmailHTML(clientData, planText);
 
   await fetch('https://api.resend.com/emails', {
