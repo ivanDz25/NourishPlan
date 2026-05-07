@@ -417,8 +417,8 @@ function parsePlan(text){
       html+='<div class="ingredients-label">Ingredients</div><ul class="ingredients-list">';
       inIngredients=true;continue;
     }
-    if(inDay&&inIngredients&&/^[*\-]/.test(line)){
-      html+='<li>'+line.replace(/^[*\-]\s*/,'').trim()+'</li>';continue;
+    if(inDay&&inIngredients&&/^[•*\-]/.test(line)){
+      html+='<li>'+line.replace(/^[•*\-]\s*/,'').trim()+'</li>';continue;
     }
     if(inDay&&line.startsWith('*')){
       if(inIngredients){html+='<li>'+line.replace(/^\*\s*/,'').trim()+'</li>';continue}
@@ -437,8 +437,8 @@ function parsePlan(text){
       if(isS){
         currentSection=line.replace(':','').trim();
         if(!grocerySections[currentSection])grocerySections[currentSection]=[];
-      } else if(/^[*\-]/.test(line)&&currentSection){
-        grocerySections[currentSection].push(line.replace(/^[*\-]\s*/,'').trim());
+      } else if(/^[•*\-]/.test(line)&&currentSection){
+        grocerySections[currentSection].push(line.replace(/^[•*\-]\s*/,'').trim());
       } else if(/^estimated total/i.test(line)){
         html+=renderGrocery(grocerySections)+'</div>';
         html+='<div class="grocery-total">'+line+'</div>';
