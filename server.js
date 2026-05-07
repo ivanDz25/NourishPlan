@@ -206,9 +206,9 @@ Protein: Xg | Carbs: Xg | Fat: Xg
 Strategy note: [1 sentence on approach for their specific goal]
 
 ═══════════════════════════════════════
-7-DAY MEAL PLAN
+${d.days}-DAY MEAL PLAN
 ═══════════════════════════════════════
-
+Generate exactly ${d.days} days starting Monday. Do not generate more days than this number.
 For each day, list every meal with this exact format:
 
 DAY [number] — [DAY NAME]
