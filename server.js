@@ -34,7 +34,7 @@ app.post('/generate', async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-520251001',
+        model: 'claude-sonnet-4-5',
         max_tokens: 20000,
         messages: [{ role: 'user', content: prompt }]
       })
