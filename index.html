@@ -490,12 +490,19 @@ function parsePlan(text){
       continue;
     }
 
-    // ── Meal name (MEAL 1:, BREAKFAST:, DINNER:, SNACK:) ──
-if(inDay&&/^(MEAL\s+\d+\s*:|BREAKFAST|LUNCH|DINNER|SNACK)[\s:\-—]*/i.test(line)){  
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      html+='<div class="meal-name">'+line+'</div>';
-      continue;
-    }
+// — Meal name (BREAKFAST:, LUNCH:, DINNER:, SNACK:, SNACKS:) —
+if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)\s*[:\-—]?\s*/i.test(line)){
+  if(inIngredients){html+='</ul>';inIngredients=false}
+  if(inInstructions){html+='</ol>';inInstructions=false}
+  // Use rest of line as meal name, or peek at next line if this line is just the keyword
+  var mealLabel=line.replace(/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)\s*[:\-—]?\s*/i,'').trim();
+  if(!mealLabel&&lines[i+1]&&lines[i+1].trim()&&!/^(INGREDIENTS|INSTRUCTIONS)/i.test(lines[i+1].trim())){
+    i++;mealLabel=lines[i].trim();
+  }
+  var displayLabel=mealLabel?line.replace(/[:\-—].*$/,'').trim()+': '+mealLabel:line;
+  html+='<div class="meal-name">'+displayLabel+'</div>';
+  continue;
+}
 
     // ── Ingredients ──
     if(inDay&&/^ingredients:?$/i.test(line)){
