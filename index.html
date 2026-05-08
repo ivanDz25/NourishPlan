@@ -550,18 +550,6 @@ function parsePlan(text){
   if(inDay)html+='</div>';
   if(inGrocery&&!groceryDone&&Object.keys(grocerySections).length>0){html+=renderGrocery(grocerySections)+'</div>';}
   if(inTips)html+='</div>';
-  return html;
-}
-
-  // Close any open tags and flush grocery list if not closed by ESTIMATED TOTAL
-  if(inIngredients)html+='</ul>';
-  if(inInstructions)html+='</ol>';
-  if(inDay)html+='</div>';
-  if(inGrocery&&!groceryDone&&Object.keys(grocerySections).length>0){
-    html+=renderGrocery(grocerySections)+'</div>';
-  }
-  if(inTips)html+='</div>';
-  return html;
 }
 
 function renderGrocery(sections){
