@@ -79,7 +79,9 @@ input[type=range]{flex:1;accent-color:var(--moss)}
 .strategy-note{font-size:13px;color:var(--muted);line-height:1.6;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)}
 .day-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:12px;box-shadow:var(--card-shadow)}
 .day-header{font-size:15px;font-weight:500;color:var(--moss);margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border)}
-.meal-name{font-size:14px;font-weight:500;color:var(--bark);margin:1rem 0 6px}
+.meal-name{font-size:14px;font-weight:500;color:var(--bark);margin:1.25rem 0 6px}
+.meal-name:first-of-type{margin-top:0}
+.meal-divider{border:none;border-top:1px solid var(--border);margin:1rem 0 0}
 .ingredients-label{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px}
 .ingredients-list{list-style:none;margin:0 0 8px;padding:0}
 .ingredients-list li{font-size:13px;color:var(--bark-soft);padding:3px 0 3px 12px;position:relative;line-height:1.5}
@@ -244,8 +246,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         <div class="chips">
           <div class="chip"><label><input type="checkbox" name="proteins" value="Chicken"/><span>🍗 Chicken</span></label></div>
           <div class="chip"><label><input type="checkbox" name="proteins" value="Beef"/><span>🥩 Beef</span></label></div>
-          <div class="chip"><label><input type="checkbox" name="proteins" value="Turkey"/><span>🦃 Turkey</span></label></div>
-          <div class="chip"><label><input type="checkbox" name="proteins" value="Pork"/><span>🐖 Pork</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Turkey"/><span>Turkey</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Pork"/><span>Pork</span></label></div>
           <div class="chip"><label><input type="checkbox" name="proteins" value="Fish and seafood"/><span>🐟 Fish</span></label></div>
           <div class="chip"><label><input type="checkbox" name="proteins" value="Eggs"/><span>🥚 Eggs</span></label></div>
           <div class="chip"><label><input type="checkbox" name="proteins" value="Plant-based proteins"/><span>🌱 Plant-based</span></label></div>
@@ -425,28 +427,32 @@ function parsePlan(text){
   for(var i=0;i<lines.length;i++){
     var line=lines[i].trim();
     if(!line||/^[=\-]{3,}$/.test(line)||/^[═─]{3,}$/.test(line))continue;
-
     var UP=line.toUpperCase();
 
-    if(UP==='CALORIE & MACRO TARGETS'||UP==='CALORIE AND MACRO TARGETS'||UP.indexOf('CALORIE')===0&&UP.indexOf('MACRO')>0){
+    // ── Top-level sections ──
+    if(/^CALORIE.*MACRO/i.test(line)){
       if(inDay){html+='</div>';inDay=false}
       inMacro=true;inGrocery=false;inTips=false;
       html+='<div class="plan-section-label">Calorie & Macro Targets</div><div class="macro-card">';
       continue;
     }
-    if(/DAY MEAL PLAN/i.test(line)){
+    if(/\d+-DAY MEAL PLAN|DAY MEAL PLAN/i.test(line)){
       if(inMacro){html+='</div>';inMacro=false}
       if(inDay){html+='</div>';inDay=false}
       html+='<div class="plan-section-label">'+line+'</div>';
       continue;
     }
-    if(UP==='WEEKLY GROCERY LIST'||UP==='GROCERY LIST'){
+    if(/WEEKLY GROCERY LIST|^GROCERY LIST$/i.test(UP)){
+      if(inIngredients){html+='</ul>';inIngredients=false}
+      if(inInstructions){html+='</ol>';inInstructions=false}
       if(inDay){html+='</div>';inDay=false}
       inMacro=false;inGrocery=true;inTips=false;groceryDone=false;
       html+='<div class="plan-section-label">Weekly Grocery List</div><div class="grocery-grid">';
       continue;
     }
-    if(UP==='MEAL PREP TIPS'||UP==='PREP TIPS'){
+    if(/^MEAL PREP TIPS$|^PREP TIPS$/i.test(UP)){
+      if(inIngredients){html+='</ul>';inIngredients=false}
+      if(inInstructions){html+='</ol>';inInstructions=false}
       if(inDay){html+='</div>';inDay=false}
       if(inGrocery&&!groceryDone){html+=renderGrocery(grocerySections)+'</div>';groceryDone=true}
       inMacro=false;inGrocery=false;inTips=true;tipCount=0;
@@ -454,6 +460,7 @@ function parsePlan(text){
       continue;
     }
 
+    // ── Macro card ──
     if(inMacro){
       if(/^daily calories/i.test(line)){
         var cal=line.replace(/^daily calories:\s*/i,'').trim();
@@ -473,6 +480,7 @@ function parsePlan(text){
       continue;
     }
 
+    // ── Day headers ──
     if(/^DAY\s+\d+/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
@@ -482,46 +490,57 @@ function parsePlan(text){
       continue;
     }
 
+    // ── Meal name (MEAL 1:, BREAKFAST:, DINNER:, SNACK:) ──
     if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACK)\s*:/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
       html+='<div class="meal-name">'+line+'</div>';
       continue;
     }
+
+    // ── Ingredients ──
     if(inDay&&/^ingredients:?$/i.test(line)){
       if(inInstructions){html+='</ol>';inInstructions=false}
+      if(inIngredients){html+='</ul>';} // close any open list first
       html+='<div class="ingredients-label">Ingredients</div><ul class="ingredients-list">';
       inIngredients=true;continue;
     }
+    if(inIngredients&&/^[•*\-]/.test(line)){
+      html+='<li>'+line.replace(/^[•*\-]\s*/,'').trim()+'</li>';continue;
+    }
+
+    // ── Instructions ──
     if(inDay&&/^instructions:?$/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       html+='<div class="instructions-label">Instructions</div><ol class="instructions-list">';
       inInstructions=true;continue;
     }
-    if(inDay&&inIngredients&&/^[•*\-]/.test(line)){
-      html+='<li>'+line.replace(/^[•*\-]\s*/,'').trim()+'</li>';continue;
+    if(inInstructions&&/^\d+[.)]\s/.test(line)){
+      html+='<li>'+line.replace(/^\d+[.)]\s*/,'').trim()+'</li>';continue;
     }
-    if(inDay&&inInstructions&&/^\d+\./.test(line)){
-      html+='<li>'+line.replace(/^\d+\.\s*/,'').trim()+'</li>';continue;
-    }
+
+    // ── Macros + prep ──
     if(inDay&&/^macros:/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
-      html+='<div class="meal-macros">'+line+'</div>';continue;
+      var macroVal=line.replace(/^macros:\s*/i,'').trim();
+      if(macroVal)html+='<div class="meal-macros">Macros: '+macroVal+'</div>';
+      continue;
     }
     if(inDay&&/^prep time:/i.test(line)){
       html+='<div class="meal-prep">'+line+'</div>';continue;
     }
 
+    // ── Grocery ──
     if(inGrocery&&!groceryDone){
-      var UPL=line.toUpperCase().replace(':','');
-      var isS=GSECTIONS.some(function(s){return UPL===s||UPL.indexOf(s)===0});
+      var UPL=UP.replace(/:\s*$/,'').trim();
+      var isS=GSECTIONS.some(function(s){return UPL===s||UPL.startsWith(s)});
       if(isS){
-        currentSection=line.replace(':','').trim();
+        currentSection=line.replace(/:\s*$/,'').trim();
         if(!grocerySections[currentSection])grocerySections[currentSection]=[];
       } else if(/^[•*\-]/.test(line)&&currentSection){
         grocerySections[currentSection].push(line.replace(/^[•*\-]\s*/,'').trim());
-      } else if(/^estimated total/i.test(line)){
+      } else if(/estimated total/i.test(line)){
         html+=renderGrocery(grocerySections)+'</div>';
         html+='<div class="grocery-total">'+line+'</div>';
         groceryDone=true;inGrocery=false;
@@ -529,14 +548,20 @@ function parsePlan(text){
       continue;
     }
 
-    if(inTips&&/^\d+\./.test(line)){
+    // ── Tips ──
+    if(inTips&&/^\d+[.)]\s/.test(line)){
       tipCount++;
-      html+='<div class="tip-item"><div class="tip-num">'+tipCount+'</div><div class="tip-text">'+line.replace(/^\d+\.\s*/,'').trim()+'</div></div>';
+      html+='<div class="tip-item"><div class="tip-num">'+tipCount+'</div><div class="tip-text">'+line.replace(/^\d+[.)]\s*/,'').trim()+'</div></div>';
     }
   }
+
+  // Close any open tags and flush grocery list if not closed by ESTIMATED TOTAL
   if(inIngredients)html+='</ul>';
   if(inInstructions)html+='</ol>';
   if(inDay)html+='</div>';
+  if(inGrocery&&!groceryDone&&Object.keys(grocerySections).length>0){
+    html+=renderGrocery(grocerySections)+'</div>';
+  }
   if(inTips)html+='</div>';
   return html;
 }
