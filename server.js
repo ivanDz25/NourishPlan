@@ -46,8 +46,8 @@ app.post('/generate', async (req, res) => {
     }
 
     const data = await response.json();
-    let text = data.content?.map(b => b.text || '').join('') || '';
-
+let text = (data.content && data.content.map(function(b){return b.text||''}).join('')) || '';
+if(!text){return res.status(500).json({error:'Empty response from Anthropic'});}    
     // Strip markdown that slips through
     text = text
       .replace(/\*\*(.+?)\*\*/g, '$1')
