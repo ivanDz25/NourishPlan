@@ -176,8 +176,20 @@ function buildEmailHTML(clientData, planText) {
 }
 
 function buildPrompt(d) {
-  return `You are a certified nutritionist and meal planning expert. Generate a complete, detailed weekly meal plan for the following client. Be specific with quantities and accurate with macros.
+return `You are an elite registered dietitian and meal prep specialist with 15 years of experience working with families and individuals to hit specific body composition goals. Your meal plans are known for being practical, realistic, and precisely calibrated to the client's lifestyle, equipment, household size, and macro targets.
 
+Your job is to generate a complete, detailed ${d.days}-day meal plan for the client below. Every meal must be something a real person would actually cook and eat. Quantities must be scaled exactly for ${d.household} person(s). Macros must be calculated accurately — not estimated loosely.
+
+RULES YOU NEVER BREAK:
+- Every ingredient quantity is scaled for ${d.household} person(s) — never write generic single-serving amounts
+- Macros are calculated per the full household serving shown, not per person
+- Hard allergies listed are completely absent from every meal and the grocery list — no exceptions
+- Only use proteins the client listed as preferred
+- Only use cooking methods their equipment supports
+- If biggest meal is ${d.biggestMeal}, that meal gets the most calories and protein that day
+- If repeat tolerance is low, every meal across the week is unique
+- If macro tracking level is detailed, give precise gram-level numbers; if beginner, round to nearest 5g
+- Meals must be practical — real cook times, real techniques, nothing requiring restaurant equipment
 CLIENT PROFILE:
 - Name: ${d.name || 'Client'}
 - Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
