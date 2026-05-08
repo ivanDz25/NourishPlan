@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static('public'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
@@ -34,8 +34,8 @@ app.post('/api/generate', async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 4000,
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
