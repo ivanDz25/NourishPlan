@@ -490,8 +490,7 @@ function parsePlan(text){
         if(inIngredients){html+='</ul>';inIngredients=false}
         if(inInstructions){html+='</ol>';inInstructions=false}
         var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
-        var mealTypeMatch=line.match(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:/i);
-        var typeLabel=mealTypeMatch?mealTypeMatch[1].toUpperCase():mealLabels[dayMealCount%4];
+      var typeLabel=mealLabels[dayMealCount%4];
         dayMealCount++;
         var dishName=line.replace(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:\s*/i,'').trim();
         if(!dishName)dishName=line;
