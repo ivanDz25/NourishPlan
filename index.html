@@ -424,13 +424,10 @@ function parsePlan(text){
   var inDay=false,inGrocery=false,inTips=false,inMacro=false,inIngredients=false,inInstructions=false,groceryDone=false;
   var grocerySections={},currentSection=null,tipCount=0;
   var GSECTIONS=['PRODUCE','PROTEIN & MEAT','PROTEIN AND MEAT','DAIRY & EGGS','DAIRY AND EGGS','PANTRY & DRY GOODS','PANTRY AND DRY GOODS','FROZEN'];
-
   for(var i=0;i<lines.length;i++){
     var line=lines[i].trim();
     if(!line||/^[=\-]{3,}$/.test(line)||/^[═─]{3,}$/.test(line))continue;
     var UP=line.toUpperCase();
-
-    // ── Top-level sections ──
     if(/^CALORIE.*MACRO/i.test(line)){
       if(inDay){html+='</div>';inDay=false}
       inMacro=true;inGrocery=false;inTips=false;
@@ -460,8 +457,6 @@ function parsePlan(text){
       html+='<div class="plan-section-label">Meal Prep Tips</div><div class="tips-card">';
       continue;
     }
-
-    // ── Macro card ──
     if(inMacro){
       if(/^daily calories/i.test(line)){
         var cal=line.replace(/^daily calories:\s*/i,'').trim();
@@ -480,43 +475,39 @@ function parsePlan(text){
       }
       continue;
     }
-
-// — Day headers —
-if(/^DAY\s+\d+/i.test(line)){
-  if(inIngredients){html+='</ul>';inIngredients=false}
-  if(inInstructions){html+='</ol>';inInstructions=false}
-  if(inDay){html+='</div>'}
-  inDay=true;
-  dayMealCount=0;
-  html+='<div class="day-card"><div class="day-header">'+line+'</div>';
-  continue;
-}
-// — Meal name detection —
-if(inDay&&(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||(!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&']+$/.test(line.trim())&&line.trim().length>5&&line.trim().length<80&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP|WEEKLY|MEAL PREP|CALORIE)/i.test(line)))){
-  if(inIngredients){html+='</ul>';inIngredients=false}
-  if(inInstructions){html+='</ol>';inInstructions=false}
-  var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
-  var mealTypeMatch=line.match(/\b(BREAKFAST|LUNCH|DINNER|SNACKS?)\b/i);
-  var typeLabel=mealTypeMatch?mealTypeMatch[0].toUpperCase():mealLabels[dayMealCount%4];
-  dayMealCount++;
-  var dishName=line.replace(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:\s*/i,'').trim();
-  if(!dishName)dishName=line;
-  html+='<div class="meal-name">'+typeLabel+': '+dishName+'</div>';
-  continue;
-}
-
-    // ── Ingredients ──
+    if(/^DAY\s+\d+/i.test(line)){
+      if(inIngredients){html+='</ul>';inIngredients=false}
+      if(inInstructions){html+='</ol>';inInstructions=false}
+      if(inDay){html+='</div>'}
+      inDay=true;dayMealCount=0;
+      html+='<div class="day-card"><div class="day-header">'+line+'</div>';
+      continue;
+    }
+    if(inDay){
+      var isMealLabel=/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:/i.test(line);
+      var isDishName=!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT)/i.test(line);
+      if(isMealLabel||isDishName){
+        if(inIngredients){html+='</ul>';inIngredients=false}
+        if(inInstructions){html+='</ol>';inInstructions=false}
+        var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
+        var mealTypeMatch=line.match(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:/i);
+        var typeLabel=mealTypeMatch?mealTypeMatch[1].toUpperCase():mealLabels[dayMealCount%4];
+        dayMealCount++;
+        var dishName=line.replace(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:\s*/i,'').trim();
+        if(!dishName)dishName=line;
+        html+='<div class="meal-name">'+typeLabel+': '+dishName+'</div>';
+        continue;
+      }
+    }
     if(inDay&&/^ingredients:?$/i.test(line)){
       if(inInstructions){html+='</ol>';inInstructions=false}
-      if(inIngredients){html+='</ul>';} // close any open list first
+      if(inIngredients){html+='</ul>';}
       html+='<div class="ingredients-label">Ingredients</div><ul class="ingredients-list">';
       inIngredients=true;continue;
     }
     if(inIngredients&&/^[•*\-]/.test(line)){
       html+='<li>'+line.replace(/^[•*\-]\s*/,'').trim()+'</li>';continue;
     }
-
-    // ── Instructions ──
     if(inDay&&/^instructions:?$/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       html+='<div class="instructions-label">Instructions</div><ol class="instructions-list">';
@@ -525,8 +516,6 @@ if(inDay&&(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||(!inIngredients
     if(inInstructions&&/^\d+[.)]\s/.test(line)){
       html+='<li>'+line.replace(/^\d+[.)]\s*/,'').trim()+'</li>';continue;
     }
-
-    // ── Macros + prep ──
     if(inDay&&/^macros:/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
@@ -537,8 +526,6 @@ if(inDay&&(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||(!inIngredients
     if(inDay&&/^prep time:/i.test(line)){
       html+='<div class="meal-prep">'+line+'</div>';continue;
     }
-
-    // ── Grocery ──
     if(inGrocery&&!groceryDone){
       var UPL=UP.replace(/:\s*$/,'').trim();
       var isS=GSECTIONS.some(function(s){return UPL===s||UPL.startsWith(s)});
@@ -554,13 +541,18 @@ if(inDay&&(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||(!inIngredients
       }
       continue;
     }
-
-    // ── Tips ──
     if(inTips&&/^\d+[.)]\s/.test(line)){
       tipCount++;
       html+='<div class="tip-item"><div class="tip-num">'+tipCount+'</div><div class="tip-text">'+line.replace(/^\d+[.)]\s*/,'').trim()+'</div></div>';
     }
   }
+  if(inIngredients)html+='</ul>';
+  if(inInstructions)html+='</ol>';
+  if(inDay)html+='</div>';
+  if(inGrocery&&!groceryDone&&Object.keys(grocerySections).length>0){html+=renderGrocery(grocerySections)+'</div>';}
+  if(inTips)html+='</div>';
+  return html;
+}
 
   // Close any open tags and flush grocery list if not closed by ESTIMATED TOTAL
   if(inIngredients)html+='</ul>';
