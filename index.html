@@ -499,8 +499,9 @@ if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)\s*[:\-—]?\s*/i.test(li
   if(!mealLabel&&lines[i+1]&&lines[i+1].trim()&&!/^(INGREDIENTS|INSTRUCTIONS)/i.test(lines[i+1].trim())){
     i++;mealLabel=lines[i].trim();
   }
-var displayLabel=mealLabel?mealLabel.replace(/^\(?(BREAKFAST|LUNCH|DINNER|SNACKS?)\)?\s*[:\-—]\s*/i,'').trim():line.replace(/^(MEAL\s+\d+\s*(\([^)]*\))?\s*[:\-—]?\s*|\(?(BREAKFAST|LUNCH|DINNER|SNACKS?)\)?\s*[:\-—]\s*)+/gi,'').trim();
-if(!displayLabel)displayLabel=line;  html+='<div class="meal-name">'+displayLabel+'</div>';
+var typeLabel=(line.match(/\b(BREAKFAST|LUNCH|DINNER|SNACKS?)\b/i)||[''])[0].toUpperCase();
+var dishName=mealLabel.replace(/^\(?(BREAKFAST|LUNCH|DINNER|SNACKS?)\)?\s*[:\-—]\s*/i,'').replace(/^(MEAL\s+\d+\s*(\([^)]*\))?\s*[:\-—]\s*)+/i,'').trim();
+var displayLabel=typeLabel&&dishName?typeLabel+': '+dishName:dishName||line;if(!displayLabel)displayLabel=line;  html+='<div class="meal-name">'+displayLabel+'</div>';
   continue;
 }
 
