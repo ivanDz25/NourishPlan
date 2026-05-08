@@ -491,8 +491,7 @@ function parsePlan(text){
     }
 
     // ── Meal name (MEAL 1:, BREAKFAST:, DINNER:, SNACK:) ──
-    if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACK)\s*:/i.test(line)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
+if(inDay&&/^(MEAL\s+\d+\s*:|BREAKFAST|LUNCH|DINNER|SNACK)[\s:\-—]*/i.test(line)){  
       if(inInstructions){html+='</ol>';inInstructions=false}
       html+='<div class="meal-name">'+line+'</div>';
       continue;
