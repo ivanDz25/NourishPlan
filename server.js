@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static('public'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
@@ -34,7 +34,7 @@ app.post('/api/generate', async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -48,15 +48,15 @@ app.post('/api/generate', async (req, res) => {
     const data = await response.json();
     let text = data.content?.map(b => b.text || '').join('') || '';
 
-    // Strip any markdown that slips through despite prompt instructions
+    // Strip markdown that slips through
     text = text
-      .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold**
-      .replace(/\*(.+?)\*/g, '$1')        // *italic*
-      .replace(/^#{1,6}\s+/gm, '')        // ## headers
-      .replace(/^>\s+/gm, '')             // > blockquotes
-      .replace(/`{1,3}[^`]*`{1,3}/g, '') // `code`
-      .replace(/^[-]{3,}$/gm, '─────────────────────────') // --- dividers → proper char
-      .replace(/^\s*[-*]\s+/gm, '• ');    // - bullets → •
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/`{1,3}[^`]*`{1,3}/g, '')
+      .replace(/^[-]{3,}$/gm, '─────────────────────────')
+      .replace(/^\s*[-*]\s+/gm, '• ');
 
     // Send email async — don't block the response
     if (clientData.email && process.env.RESEND_API_KEY) {
@@ -74,8 +74,8 @@ app.post('/api/generate', async (req, res) => {
 // Send plan via Resend
 async function sendEmail(clientData, planText) {
   const resendKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-  
+  const fromEmail = process.env.FROM_EMAIL || 'plans@nourishplan.co';
+
   const htmlBody = buildEmailHTML(clientData, planText);
 
   await fetch('https://api.resend.com/emails', {
@@ -188,11 +188,32 @@ CLIENT PROFILE:
 - Meals per day: ${d.meals}
 - Days to cover: ${d.days} days/week
 - Weekly grocery budget: ${d.budget || '$150'}
-- Dietary restrictions: ${d.restrictions || 'None'}
+
+FOOD PREFERENCES:
+- Preferred proteins: ${d.proteins || 'No preference'}
+- Dietary style/restrictions: ${d.restrictions || 'None'}
+- Hard allergies (AVOID COMPLETELY): ${d.hardAllergies || 'None'}
 - Cuisine preferences: ${d.cuisine || 'No preference'}
+- Foods to avoid (preference): ${d.dislikes || 'None'}
+
+COOKING SETUP:
+- Kitchen equipment: ${d.equipment || 'Standard kitchen'}
 - Cooking skill/time: ${d.skill}
-- Foods to avoid: ${d.dislikes || 'None'}
-- Additional notes: ${d.notes || 'None'}
+- Biggest meal of day: ${d.biggestMeal || 'No preference'}
+- Okay with meal repeats: ${d.mealRepeat || 'Somewhat'}
+- Currently tracks macros: ${d.tracking || 'No'}
+
+ADDITIONAL NOTES: ${d.notes || 'None'}
+
+PERSONALIZATION RULES:
+- Only use proteins the client listed as preferred
+- Only use cooking methods compatible with their equipment
+- If biggest meal is dinner, put more calories/protein there
+- If they dislike repeats, ensure every meal is unique
+- If they track carefully, be very precise with macro numbers
+- If they are a beginner tracker, keep meals simple and easy to log
+- Hard allergies must be completely absent from ALL meals and the grocery list
+- Scale all quantities for ${d.household} person(s)
 
 OUTPUT FORMAT — follow exactly:
 
@@ -208,7 +229,9 @@ Strategy note: [1 sentence on approach for their specific goal]
 ═══════════════════════════════════════
 ${d.days}-DAY MEAL PLAN
 ═══════════════════════════════════════
+
 Generate exactly ${d.days} days starting Monday. Do not generate more days than this number.
+
 For each day, list every meal with this exact format:
 
 DAY [number] — [DAY NAME]
@@ -217,6 +240,10 @@ DAY [number] — [DAY NAME]
 Ingredients:
   • [ingredient] — [quantity, scaled for ${d.household} person(s)]
   • [ingredient] — [quantity]
+Instructions:
+  1. [Step one — be specific, include temps, times, techniques]
+  2. [Step two]
+  3. [Continue until dish is complete — typically 4-7 steps]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -247,11 +274,11 @@ ESTIMATED TOTAL: $XX–$XX
 ═══════════════════════════════════════
 MEAL PREP TIPS
 ═══════════════════════════════════════
-1. [Specific tip for this client's cooking style and schedule]
-2. [Batch cooking suggestion based on their meals]
+1. [Specific tip for this client's cooking style and equipment]
+2. [Batch cooking suggestion based on their meals and repeat preference]
 3. [Storage/prep tip]
 4. [Budget-stretching tip relevant to their grocery list]
-5. [Macro tracking tip relevant to their goal]
+5. [Macro tracking tip calibrated to their tracking experience level]
 
 CRITICAL FORMATTING RULES — follow exactly:
 - Use PLAIN TEXT ONLY. Zero markdown. No **, no ##, no --, no >, no backticks.
