@@ -418,6 +418,7 @@ function showLoading(){
 }
 
 function parsePlan(text){
+  var dayMealCount=0;
   var lines=text.split('\n');
   var html='';
   var inDay=false,inGrocery=false,inTips=false,inMacro=false,inIngredients=false,inInstructions=false,groceryDone=false;
@@ -481,6 +482,8 @@ function parsePlan(text){
     }
 
     // ── Day headers ──
+    if(/^DAY\s+\d+/i.test(line)){
+  dayMealCount=0;  //
     if(/^DAY\s+\d+/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
