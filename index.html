@@ -481,28 +481,25 @@ function parsePlan(text){
       continue;
     }
 
-    // ── Day headers ──
-    if(/^DAY\s+\d+/i.test(line)){
-  dayMealCount=0;  //
-    if(/^DAY\s+\d+/i.test(line)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      if(inDay){html+='</div>'}
-      inDay=true;
-      html+='<div class="day-card"><div class="day-header">'+line+'</div>';
-      continue;
-    }
-
+// — Day headers —
+if(/^DAY\s+\d+/i.test(line)){
+  if(inIngredients){html+='</ul>';inIngredients=false}
+  if(inInstructions){html+='</ol>';inInstructions=false}
+  if(inDay){html+='</div>'}
+  inDay=true;
+  dayMealCount=0;
+  html+='<div class="day-card"><div class="day-header">'+line+'</div>';
+  continue;
+}
 // — Meal name detection —
-if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||
-   inDay&&!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&]+$/.test(line.trim())&&line.trim().length>5&&line.trim().length<80&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP|WEEKLY|MEAL PREP|CALORIE)/i.test(line)){
+if(inDay&&(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||(!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&']+$/.test(line.trim())&&line.trim().length>5&&line.trim().length<80&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP|WEEKLY|MEAL PREP|CALORIE)/i.test(line)))){
   if(inIngredients){html+='</ul>';inIngredients=false}
   if(inInstructions){html+='</ol>';inInstructions=false}
   var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
   var mealTypeMatch=line.match(/\b(BREAKFAST|LUNCH|DINNER|SNACKS?)\b/i);
   var typeLabel=mealTypeMatch?mealTypeMatch[0].toUpperCase():mealLabels[dayMealCount%4];
   dayMealCount++;
-  var dishName=line.replace(/^(MEAL\s+\d+\s*(\([^)]*\))?\s*[:\-—]?\s*|\(?(BREAKFAST|LUNCH|DINNER|SNACKS?)\)?\s*[:\-—]?\s*)+/gi,'').trim();
+  var dishName=line.replace(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:\s*/i,'').trim();
   if(!dishName)dishName=line;
   html+='<div class="meal-name">'+typeLabel+': '+dishName+'</div>';
   continue;
