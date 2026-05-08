@@ -244,23 +244,45 @@ ${d.days}-DAY MEAL PLAN
 
 Generate exactly ${d.days} days starting Monday. Do not generate more days than this number.
 
-For each day, list every meal with this exact format:
+For each day, use EXACTLY this format with no deviations:
 
 DAY [number] — [DAY NAME]
-─────────────────────────
-BREAKFAST: [Meal Name]
-(use BREAKFAST, LUNCH, DINNER, or SNACK — exact spelling, no parentheses, no numbering)
+=====================================
+
+BREAKFAST: [Meal Name Here]
 Ingredients:
-  • [ingredient] — [quantity, scaled for ${d.household} person(s)]
-  • [ingredient] — [quantity]
+- [ingredient] — [quantity, scaled for ${d.household} person(s)]
+- [ingredient] — [quantity]
 Instructions:
-  1. [Step one — be specific, include temps, times, techniques]
-  2. [Step two]
-  3. [Continue until dish is complete — typically 4-7 steps]
+1. [Step one — be specific, include temps, times, techniques]
+2. [Step two]
+3. [Continue until dish is complete — typically 4-7 steps]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
-[repeat for each meal that day]
+LUNCH: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+DINNER: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+SNACK: [Snack Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
 
 ═══════════════════════════════════════
 WEEKLY GROCERY LIST
