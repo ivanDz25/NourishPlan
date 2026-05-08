@@ -10,7 +10,7 @@ app.use(express.static(__dirname));
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Generate plan + send email
-app.post('/api/generate', async (req, res) => {
+app.post('/generate', async (req, res) => {
   const { clientData } = req.body;
 
   if (!clientData) {
