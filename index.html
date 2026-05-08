@@ -653,7 +653,7 @@ async function handleSubmit(e){
   };
   showLoading();
   try{
-    var res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientData:clientData})});
+    var res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientData:clientData})});
     var data=await res.json();
     if(!res.ok||data.error)throw new Error(data.error||'Generation failed');
     showResults(data.plan,clientData);
