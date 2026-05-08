@@ -41,6 +41,7 @@ nav{background:var(--white);border-bottom:1px solid var(--border);padding:0 2rem
 .field{margin-bottom:1rem}
 .field:last-child{margin-bottom:0}
 .field label{display:block;font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--bark-soft);margin-bottom:5px}
+.field .hint{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:none;letter-spacing:0}
 input[type=text],input[type=email],input[type=number],select,textarea{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--bark);background:var(--cream);transition:border-color 0.15s;-webkit-appearance:none;appearance:none}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--moss);background:var(--white)}
 textarea{resize:vertical;min-height:72px}
@@ -83,6 +84,9 @@ input[type=range]{flex:1;accent-color:var(--moss)}
 .ingredients-list{list-style:none;margin:0 0 8px;padding:0}
 .ingredients-list li{font-size:13px;color:var(--bark-soft);padding:3px 0 3px 12px;position:relative;line-height:1.5}
 .ingredients-list li::before{content:'·';position:absolute;left:0;color:var(--moss)}
+.instructions-label{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin:10px 0 4px}
+.instructions-list{margin:0 0 8px;padding-left:18px}
+.instructions-list li{font-size:13px;color:var(--bark-soft);padding:3px 0;line-height:1.6}
 .meal-macros{font-size:12px;font-weight:500;color:var(--moss);background:var(--moss-light);padding:6px 10px;border-radius:6px;display:inline-block;margin-bottom:4px}
 .meal-prep{font-size:12px;color:var(--muted)}
 .grocery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:12px}
@@ -233,17 +237,81 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
       </div>
     </div>
     <div class="form-block">
+      <h3>Cooking and lifestyle</h3>
+      <div class="field">
+        <label>Preferred protein sources</label>
+        <div class="hint">Select all you enjoy eating</div>
+        <div class="chips">
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Chicken"/><span>🍗 Chicken</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Beef"/><span>🥩 Beef</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Turkey"/><span>Turkey</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Pork"/><span>Pork</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Fish and seafood"/><span>🐟 Fish</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Eggs"/><span>🥚 Eggs</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="Plant-based proteins"/><span>🌱 Plant-based</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="proteins" value="No preference - variety"/><span>Variety</span></label></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Kitchen equipment available</label>
+        <div class="hint">Select everything you have access to</div>
+        <div class="chips">
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Stovetop"/><span>Stovetop</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Oven"/><span>Oven</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Air fryer"/><span>Air fryer</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Slow cooker"/><span>Slow cooker</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Instant Pot"/><span>Instant Pot</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Grill"/><span>Grill</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="equipment" value="Microwave only"/><span>Microwave only</span></label></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Biggest meal of the day</label>
+          <select id="biggestMeal">
+            <option>Breakfast (morning)</option>
+            <option>Lunch (midday)</option>
+            <option>Dinner (evening)</option>
+            <option>No preference — spread evenly</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Okay eating the same meal multiple times?</label>
+          <select id="mealRepeat">
+            <option>Yes — I like simple and repeatable</option>
+            <option>Somewhat — 1-2 repeats is fine</option>
+            <option>No — I want variety every day</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Do you currently track calories or macros?</label>
+          <select id="tracking">
+            <option>No — I'm just starting out</option>
+            <option>Sometimes — I track loosely</option>
+            <option>Yes — I track everything carefully</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Hard allergies (life-threatening)</label>
+          <textarea id="hardAllergies" placeholder="e.g. peanuts, shellfish, tree nuts — leave blank if none"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="form-block">
       <h3>Diet and preferences</h3>
       <div class="field">
-        <label>Dietary restrictions / allergies</label>
+        <label>Dietary style / restrictions</label>
         <div class="chips">
           <div class="chip"><label><input type="checkbox" name="restrictions" value="None"/><span>None</span></label></div>
           <div class="chip"><label><input type="checkbox" name="restrictions" value="Gluten-free"/><span>Gluten-free</span></label></div>
           <div class="chip"><label><input type="checkbox" name="restrictions" value="Dairy-free"/><span>Dairy-free</span></label></div>
           <div class="chip"><label><input type="checkbox" name="restrictions" value="Vegetarian"/><span>Vegetarian</span></label></div>
           <div class="chip"><label><input type="checkbox" name="restrictions" value="Vegan"/><span>Vegan</span></label></div>
-          <div class="chip"><label><input type="checkbox" name="restrictions" value="Nut allergy"/><span>Nut allergy</span></label></div>
           <div class="chip"><label><input type="checkbox" name="restrictions" value="Halal"/><span>Halal</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="restrictions" value="Kosher"/><span>Kosher</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="restrictions" value="Low FODMAP"/><span>Low FODMAP</span></label></div>
         </div>
       </div>
       <div class="field">
@@ -255,10 +323,11 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
           <div class="chip"><label><input type="checkbox" name="cuisine" value="Asian"/><span>Asian</span></label></div>
           <div class="chip"><label><input type="checkbox" name="cuisine" value="Italian"/><span>Italian</span></label></div>
           <div class="chip"><label><input type="checkbox" name="cuisine" value="Indian"/><span>Indian</span></label></div>
+          <div class="chip"><label><input type="checkbox" name="cuisine" value="Middle Eastern"/><span>Middle Eastern</span></label></div>
           <div class="chip"><label><input type="checkbox" name="cuisine" value="No preference"/><span>No preference</span></label></div>
         </div>
       </div>
-      <div class="field"><label>Cooking skill and time</label>
+      <div class="field"><label>Cooking skill and available time</label>
         <select id="skill">
           <option>Beginner - simple recipes, under 30 min</option>
           <option>Intermediate - comfortable cooking, up to 45 min</option>
@@ -267,8 +336,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         </select>
       </div>
       <div class="grid2">
-        <div class="field"><label>Foods to avoid</label><textarea id="dislikes" placeholder="e.g. mushrooms, fish, cilantro"></textarea></div>
-        <div class="field"><label>Anything else we should know?</label><textarea id="notes" placeholder="e.g. very busy Mondays, already have rice and eggs"></textarea></div>
+        <div class="field"><label>Foods to avoid (preference, not allergy)</label><textarea id="dislikes" placeholder="e.g. mushrooms, cilantro, Brussels sprouts"></textarea></div>
+        <div class="field"><label>Anything else we should know?</label><textarea id="notes" placeholder="e.g. very busy Mondays, already have rice and eggs, cooking for picky kids"></textarea></div>
       </div>
     </div>
     <div class="submit-wrap">
@@ -306,13 +375,15 @@ function updateBudget(v){document.getElementById('budgetDisplay').textContent='$
 function saveFormState(){
   try{
     var s={};
-    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes'].forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
+    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','tracking','hardAllergies'].forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
     s.budget=document.getElementById('budgetSlider').value;
     var g=document.querySelector('input[name=goal]:checked');
     var m=document.querySelector('input[name=macro]:checked');
     s.goal=g?g.value:'';s.macro=m?m.value:'';
     s.restrictions=Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x){return x.value});
     s.cuisine=Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x){return x.value});
+    s.proteins=Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x){return x.value});
+    s.equipment=Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x){return x.value});
     localStorage.setItem('np_form',JSON.stringify(s));
   }catch(e){}
 }
@@ -320,12 +391,14 @@ function saveFormState(){
 function loadFormState(){
   try{
     var s=JSON.parse(localStorage.getItem('np_form')||'{}');
-    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes'].forEach(function(id){var el=document.getElementById(id);if(el&&s[id])el.value=s[id]});
+    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','tracking','hardAllergies'].forEach(function(id){var el=document.getElementById(id);if(el&&s[id])el.value=s[id]});
     if(s.budget){document.getElementById('budgetSlider').value=s.budget;updateBudget(s.budget)}
     if(s.goal){var g=document.querySelector('input[name=goal][value="'+s.goal+'"]');if(g)g.checked=true}
     if(s.macro){var m=document.querySelector('input[name=macro][value="'+s.macro+'"]');if(m)m.checked=true}
     (s.restrictions||[]).forEach(function(v){var el=document.querySelector('input[name=restrictions][value="'+v+'"]');if(el)el.checked=true});
     (s.cuisine||[]).forEach(function(v){var el=document.querySelector('input[name=cuisine][value="'+v+'"]');if(el)el.checked=true});
+    (s.proteins||[]).forEach(function(v){var el=document.querySelector('input[name=proteins][value="'+v+'"]');if(el)el.checked=true});
+    (s.equipment||[]).forEach(function(v){var el=document.querySelector('input[name=equipment][value="'+v+'"]');if(el)el.checked=true});
   }catch(e){}
 }
 
@@ -345,7 +418,7 @@ function showLoading(){
 function parsePlan(text){
   var lines=text.split('\n');
   var html='';
-  var inDay=false,inGrocery=false,inTips=false,inMacro=false,inIngredients=false,groceryDone=false;
+  var inDay=false,inGrocery=false,inTips=false,inMacro=false,inIngredients=false,inInstructions=false,groceryDone=false;
   var grocerySections={},currentSection=null,tipCount=0;
   var GSECTIONS=['PRODUCE','PROTEIN & MEAT','PROTEIN AND MEAT','DAIRY & EGGS','DAIRY AND EGGS','PANTRY & DRY GOODS','PANTRY AND DRY GOODS','FROZEN'];
 
@@ -402,6 +475,7 @@ function parsePlan(text){
 
     if(/^DAY\s+\d+/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
+      if(inInstructions){html+='</ol>';inInstructions=false}
       if(inDay){html+='</div>'}
       inDay=true;
       html+='<div class="day-card"><div class="day-header">'+line+'</div>';
@@ -410,21 +484,29 @@ function parsePlan(text){
 
     if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACK)\s*:/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
+      if(inInstructions){html+='</ol>';inInstructions=false}
       html+='<div class="meal-name">'+line+'</div>';
       continue;
     }
     if(inDay&&/^ingredients:?$/i.test(line)){
+      if(inInstructions){html+='</ol>';inInstructions=false}
       html+='<div class="ingredients-label">Ingredients</div><ul class="ingredients-list">';
       inIngredients=true;continue;
+    }
+    if(inDay&&/^instructions:?$/i.test(line)){
+      if(inIngredients){html+='</ul>';inIngredients=false}
+      html+='<div class="instructions-label">Instructions</div><ol class="instructions-list">';
+      inInstructions=true;continue;
     }
     if(inDay&&inIngredients&&/^[•*\-]/.test(line)){
       html+='<li>'+line.replace(/^[•*\-]\s*/,'').trim()+'</li>';continue;
     }
-    if(inDay&&line.startsWith('*')){
-      if(inIngredients){html+='<li>'+line.replace(/^\*\s*/,'').trim()+'</li>';continue}
+    if(inDay&&inInstructions&&/^\d+\./.test(line)){
+      html+='<li>'+line.replace(/^\d+\.\s*/,'').trim()+'</li>';continue;
     }
     if(inDay&&/^macros:/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
+      if(inInstructions){html+='</ol>';inInstructions=false}
       html+='<div class="meal-macros">'+line+'</div>';continue;
     }
     if(inDay&&/^prep time:/i.test(line)){
@@ -453,6 +535,7 @@ function parsePlan(text){
     }
   }
   if(inIngredients)html+='</ul>';
+  if(inInstructions)html+='</ol>';
   if(inDay)html+='</div>';
   if(inTips)html+='</div>';
   return html;
@@ -508,6 +591,8 @@ async function handleSubmit(e){
   e.preventDefault();
   var restrictions=Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x){return x.value}).join(', ')||'None';
   var cuisine=Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x){return x.value}).join(', ')||'No preference';
+  var proteins=Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x){return x.value}).join(', ')||'No preference';
+  var equipment=Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x){return x.value}).join(', ')||'Standard kitchen';
   var goalEl=document.querySelector('input[name=goal]:checked');
   var macroEl=document.querySelector('input[name=macro]:checked');
   if(!goalEl||!macroEl){alert('Please select a goal and macro style.');return}
@@ -524,6 +609,12 @@ async function handleSubmit(e){
     meals:document.getElementById('meals').value,
     days:document.getElementById('days').value,
     budget:'$'+document.getElementById('budgetSlider').value,
+    proteins:proteins,
+    equipment:equipment,
+    biggestMeal:document.getElementById('biggestMeal').value,
+    mealRepeat:document.getElementById('mealRepeat').value,
+    tracking:document.getElementById('tracking').value,
+    hardAllergies:document.getElementById('hardAllergies').value,
     restrictions:restrictions,cuisine:cuisine,
     skill:document.getElementById('skill').value,
     dislikes:document.getElementById('dislikes').value,
