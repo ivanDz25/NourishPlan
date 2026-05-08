@@ -236,7 +236,8 @@ For each day, list every meal with this exact format:
 
 DAY [number] — [DAY NAME]
 ─────────────────────────
-[MEAL TYPE]: [Meal Name]
+BREAKFAST: [Meal Name]
+(use BREAKFAST, LUNCH, DINNER, or SNACK — exact spelling, no parentheses, no numbering)
 Ingredients:
   • [ingredient] — [quantity, scaled for ${d.household} person(s)]
   • [ingredient] — [quantity]
@@ -287,7 +288,13 @@ CRITICAL FORMATTING RULES — follow exactly:
 - Numbers use digits only (e.g. 180g not **180g**).
 - Do not bold, italicize, or underline anything.
 - Do not add extra commentary outside the format above.
-
+- Meal labels MUST use ONLY these exact words: BREAKFAST, LUNCH, DINNER, SNACK — nothing else.
+- NEVER use time-of-day labels like (Morning), (Late Morning), (Evening), (Midday), (Afternoon).
+- NEVER use MEAL 1, MEAL 2 numbering.
+- NEVER put the meal type in parentheses.
+- Format MUST be exactly: BREAKFAST: [Meal Name] on a single line, then Ingredients: on the next line.
+- Example correct: BREAKFAST: Scrambled Eggs with Turkey Sausage
+- Example wrong: MEAL 1 (Breakfast): (Breakfast): Scrambled Eggs
 Be thorough and specific. Real quantities, real macro numbers. No vague amounts.`;
 }
 
