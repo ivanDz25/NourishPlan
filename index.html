@@ -490,18 +490,18 @@ function parsePlan(text){
       continue;
     }
 
-// — Meal name (BREAKFAST:, LUNCH:, DINNER:, SNACK:, SNACKS:) —
-if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)\s*[:\-—]?\s*/i.test(line)){
+// — Meal name detection —
+if(inDay&&/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)[\s:]/i.test(line)||
+   inDay&&!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&]+$/.test(line.trim())&&line.trim().length>5&&line.trim().length<80&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP|WEEKLY|MEAL PREP|CALORIE)/i.test(line)){
   if(inIngredients){html+='</ul>';inIngredients=false}
   if(inInstructions){html+='</ol>';inInstructions=false}
-  // Use rest of line as meal name, or peek at next line if this line is just the keyword
-  var mealLabel=line.replace(/^(MEAL\s+\d+|BREAKFAST|LUNCH|DINNER|SNACKS?)\s*[:\-—]?\s*/i,'').trim();
-  if(!mealLabel&&lines[i+1]&&lines[i+1].trim()&&!/^(INGREDIENTS|INSTRUCTIONS)/i.test(lines[i+1].trim())){
-    i++;mealLabel=lines[i].trim();
-  }
-var typeLabel=(line.match(/\b(BREAKFAST|LUNCH|DINNER|SNACKS?)\b/i)||[''])[0].toUpperCase();
-var dishName=mealLabel.replace(/^\(?(BREAKFAST|LUNCH|DINNER|SNACKS?)\)?\s*[:\-—]\s*/i,'').replace(/^(MEAL\s+\d+\s*(\([^)]*\))?\s*[:\-—]\s*)+/i,'').trim();
-var displayLabel=typeLabel&&dishName?typeLabel+': '+dishName:dishName||line;if(!displayLabel)displayLabel=line;  html+='<div class="meal-name">'+displayLabel+'</div>';
+  var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
+  var mealTypeMatch=line.match(/\b(BREAKFAST|LUNCH|DINNER|SNACKS?)\b/i);
+  var typeLabel=mealTypeMatch?mealTypeMatch[0].toUpperCase():mealLabels[dayMealCount%4];
+  dayMealCount++;
+  var dishName=line.replace(/^(MEAL\s+\d+\s*(\([^)]*\))?\s*[:\-—]?\s*|\(?(BREAKFAST|LUNCH|DINNER|SNACKS?)\)?\s*[:\-—]?\s*)+/gi,'').trim();
+  if(!dishName)dishName=line;
+  html+='<div class="meal-name">'+typeLabel+': '+dishName+'</div>';
   continue;
 }
 
