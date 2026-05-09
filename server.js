@@ -231,8 +231,6 @@ If health context is provided, treat it as a primary dietary filter that overrid
 
  ADDITIONAL NOTES 
 ${d.notes || 'None'}
-`;
-}
 
 PERSONALIZATION RULES:
 - Only use proteins the client listed as preferred
