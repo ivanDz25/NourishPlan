@@ -189,6 +189,7 @@ RULES YOU NEVER BREAK:
 - If repeat tolerance is low, every meal across the week is unique
 - If macro tracking level is detailed, give precise gram-level numbers; if beginner, round to nearest 5g
 - Meals must be practical — real cook times, real techniques, nothing requiring restaurant equipment
+- The meal structure must match exactly what the user selected. If they selected "2 meals + snacks", generate exactly 2 meals and 1 snack per day — never 3 meals.
 CLIENT PROFILE:
 - Name: ${d.name || 'Client'}
 - Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
@@ -196,7 +197,7 @@ CLIENT PROFILE:
 - Goal: ${d.goal}
 - Macro preference: ${d.macro}
 - Household size: ${d.household} person(s)
-- Meals per day: ${d.meals}
+- Meals per day: ${d.meals} — STRICT: generate EXACTLY this meal structure every day, no exceptions. If "2 meals + snacks", output ONLY lunch, dinner, and 1 snack — NO breakfast. If "3 meals/day", output ONLY breakfast, lunch, dinner — NO snacks. Never add extra meals beyond what is specified.
 - Days to cover: ${d.days} days/week
 - Weekly grocery budget: ${d.budget || '$150'}
 
