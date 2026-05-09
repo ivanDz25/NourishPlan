@@ -175,47 +175,64 @@ function buildEmailHTML(clientData, planText) {
 }
 
 function buildPrompt(d) {
-return `You are an elite registered dietitian and meal prep specialist with 15 years of experience working with families and individuals to hit specific body composition goals. Your meal plans are known for being practical, realistic, and precisely calibrated to the client's lifestyle, equipment, household size, and macro targets.
+  const mealStructure = d.meals.includes('2 meals') 
+    ? 'EXACTLY 2 meals: LUNCH and DINNER only. NO breakfast. NO third meal. Snacks are separate and do not count as meals.'
+    : d.meals.includes('3 meals + snack') 
+    ? 'EXACTLY 3 meals (BREAKFAST, LUNCH, DINNER) plus 1 SNACK.'
+    : d.meals.includes('3 meals')
+    ? 'EXACTLY 3 meals: BREAKFAST, LUNCH, DINNER. No snacks.'
+    : d.meals.includes('Dinner only')
+    ? 'DINNER only. One meal per day.'
+    : d.meals;
+
+  return `You are an elite registered dietitian and meal prep specialist with 15 years of experience working with families and individuals to hit specific body composition goals. Your meal plans are known for being practical, realistic, and precisely calibrated to the client's lifestyle, equipment, household size, and macro targets.
 
 Your job is to generate a complete, detailed ${d.days}-day meal plan for the client below. Every meal must be something a real person would actually cook and eat. Quantities must be scaled exactly for ${d.household} person(s). Macros must be calculated accurately — not estimated loosely.
 
-RULES YOU NEVER BREAK:
-- Every ingredient quantity is scaled for ${d.household} person(s) — never write generic single-serving amounts
-- Macros are calculated per the full household serving shown, not per person
-- Hard allergies listed are completely absent from every meal and the grocery list — no exceptions
-- Only use proteins the client listed as preferred
-- Only use cooking methods their equipment supports
-- BIGGEST MEAL: ${d.biggestMeal} — this meal MUST have the highest calorie and protein count of the day, by a significant margin. If dinner is biggest, breakfast and lunch must be noticeably smaller. Never make breakfast the largest meal unless the user explicitly selected it.- If repeat tolerance is low, every meal across the week is unique
-- If macro tracking level is detailed, give precise gram-level numbers; if beginner, round to nearest 5g
-- Meals must be practical — real cook times, real techniques, nothing requiring restaurant equipment
-- The meal structure must match exactly what the user selected. If they selected "2 meals + snacks", generate exactly 2 meals and 1 snack per day — never 3 meals.
-CLIENT PROFILE:
+=== NON-NEGOTIABLE RULES — VIOLATING ANY OF THESE MAKES THE PLAN WRONG ===
+
+RULE 1 — MEAL STRUCTURE: ${mealStructure}
+Do not add, remove, or rename any meals. Follow this exactly every single day.
+
+RULE 2 — BIGGEST MEAL: ${d.biggestMeal}
+The meal listed above must have the highest calories AND protein of the day. It must be at least 200 calories more than any other meal. If dinner is the biggest meal, breakfast and lunch must both be smaller than dinner. Never let breakfast be the largest meal unless "Breakfast" was explicitly selected.
+
+RULE 3 — ALLERGIES: ${d.hardAllergies || 'None'}
+These ingredients are completely banned from every meal and the grocery list. No exceptions, no substitutions that contain them.
+
+RULE 4 — SCALING: All ingredient quantities are scaled for ${d.household} person(s). Never use single-serving amounts. Macros are calculated for the full household serving.
+
+RULE 5 — PROTEINS: Only use proteins from this list: ${d.proteins || 'No preference'}. Do not use other protein sources.
+
+RULE 6 — EQUIPMENT: Only use cooking methods compatible with: ${d.equipment || 'Standard kitchen'}.
+
+=== CLIENT PROFILE ===
 - Name: ${d.name || 'Client'}
 - Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
 - Activity level: ${d.activity}
 - Goal: ${d.goal}
 - Macro preference: ${d.macro}
 - Household size: ${d.household} person(s)
-- Meals per day: ${d.meals} — STRICT: generate EXACTLY this meal structure every day, no exceptions. If "2 meals + snacks", output ONLY lunch, dinner, and 1 snack — NO breakfast. If "3 meals/day", output ONLY breakfast, lunch, dinner — NO snacks. Never add extra meals beyond what is specified.
 - Days to cover: ${d.days} days/week
 - Weekly grocery budget: ${d.budget || '$150'}
 
-FOOD PREFERENCES:
-- Preferred proteins: ${d.proteins || 'No preference'}
-- Dietary style/restrictions: ${d.restrictions || 'None'}
-- Hard allergies (AVOID COMPLETELY): ${d.hardAllergies || 'None'}
+=== FOOD PREFERENCES ===
+- Dietary restrictions: ${d.restrictions || 'None'}
 - Cuisine preferences: ${d.cuisine || 'No preference'}
-- Foods to avoid (preference): ${d.dislikes || 'None'}
-
-COOKING SETUP:
-- Kitchen equipment: ${d.equipment || 'Standard kitchen'}
+- Foods to avoid (preference, not allergy): ${d.dislikes || 'None'}
 - Cooking skill/time: ${d.skill}
-- Biggest meal of day: ${d.biggestMeal || 'No preference'}
 - Okay with meal repeats: ${d.mealRepeat || 'Somewhat'}
 - Currently tracks macros: ${d.tracking || 'No'}
+- If macro tracking is detailed, give precise gram-level numbers. If beginner, round to nearest 5g.
 
-ADDITIONAL NOTES: ${d.notes || 'None'}
-HEALTH CONTEXT: ${d.healthContext || 'None'}
+=== HEALTH CONTEXT ===
+${d.healthContext || 'None'}
+If health context is provided, treat it as a primary dietary filter that overrides generic preferences. Adjust every meal accordingly — anti-inflammatory, gut-friendly, kidney-friendly, etc.
+
+=== ADDITIONAL NOTES ===
+${d.notes || 'None'}
+`;
+}
 
 PERSONALIZATION RULES:
 - Only use proteins the client listed as preferred
