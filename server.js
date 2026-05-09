@@ -185,8 +185,7 @@ RULES YOU NEVER BREAK:
 - Hard allergies listed are completely absent from every meal and the grocery list — no exceptions
 - Only use proteins the client listed as preferred
 - Only use cooking methods their equipment supports
-- If biggest meal is ${d.biggestMeal}, that meal gets the most calories and protein that day
-- If repeat tolerance is low, every meal across the week is unique
+- BIGGEST MEAL: ${d.biggestMeal} — this meal MUST have the highest calorie and protein count of the day, by a significant margin. If dinner is biggest, breakfast and lunch must be noticeably smaller. Never make breakfast the largest meal unless the user explicitly selected it.- If repeat tolerance is low, every meal across the week is unique
 - If macro tracking level is detailed, give precise gram-level numbers; if beginner, round to nearest 5g
 - Meals must be practical — real cook times, real techniques, nothing requiring restaurant equipment
 - The meal structure must match exactly what the user selected. If they selected "2 meals + snacks", generate exactly 2 meals and 1 snack per day — never 3 meals.
