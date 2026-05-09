@@ -189,7 +189,7 @@ function buildPrompt(d) {
 
 Your job is to generate a complete, detailed ${d.days}-day meal plan for the client below. Every meal must be something a real person would actually cook and eat. Quantities must be scaled exactly for ${d.household} person(s). Macros must be calculated accurately — not estimated loosely.
 
-=== NON-NEGOTIABLE RULES — VIOLATING ANY OF THESE MAKES THE PLAN WRONG ===
+NON-NEGOTIABLE RULES — VIOLATING ANY OF THESE MAKES THE PLAN WRONG
 
 RULE 1 — MEAL STRUCTURE: ${mealStructure}
 Do not add, remove, or rename any meals. Follow this exactly every single day.
@@ -206,7 +206,7 @@ RULE 5 — PROTEINS: Only use proteins from this list: ${d.proteins || 'No prefe
 
 RULE 6 — EQUIPMENT: Only use cooking methods compatible with: ${d.equipment || 'Standard kitchen'}.
 
-=== CLIENT PROFILE ===
+ CLIENT PROFILE 
 - Name: ${d.name || 'Client'}
 - Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
 - Activity level: ${d.activity}
@@ -216,7 +216,7 @@ RULE 6 — EQUIPMENT: Only use cooking methods compatible with: ${d.equipment ||
 - Days to cover: ${d.days} days/week
 - Weekly grocery budget: ${d.budget || '$150'}
 
-=== FOOD PREFERENCES ===
+ FOOD PREFERENCES 
 - Dietary restrictions: ${d.restrictions || 'None'}
 - Cuisine preferences: ${d.cuisine || 'No preference'}
 - Foods to avoid (preference, not allergy): ${d.dislikes || 'None'}
@@ -225,11 +225,11 @@ RULE 6 — EQUIPMENT: Only use cooking methods compatible with: ${d.equipment ||
 - Currently tracks macros: ${d.tracking || 'No'}
 - If macro tracking is detailed, give precise gram-level numbers. If beginner, round to nearest 5g.
 
-=== HEALTH CONTEXT ===
+ HEALTH CONTEXT 
 ${d.healthContext || 'None'}
 If health context is provided, treat it as a primary dietary filter that overrides generic preferences. Adjust every meal accordingly — anti-inflammatory, gut-friendly, kidney-friendly, etc.
 
-=== ADDITIONAL NOTES ===
+ ADDITIONAL NOTES 
 ${d.notes || 'None'}
 `;
 }
@@ -265,7 +265,6 @@ Generate exactly ${d.days} days starting Monday. Do not generate more days than 
 For each day, use EXACTLY this format with no deviations:
 
 DAY [number] — [DAY NAME]
-=====================================
 
 BREAKFAST: [Meal Name Here]
 Ingredients:
