@@ -573,7 +573,7 @@ function showResults(plan,clientData){
   document.getElementById('loading-section').style.display='none';
   document.getElementById('results-section').style.display='block';
   document.getElementById('results-section').dataset.rawPlan=plan;
-  var parsed=parsePlan(plan); document.getElementById('plan-output').innerHTML=parseplan(plan);
+  var parsed=parsePlan(plan); document.getElementById('plan-output').innerHTML=parsePlan(plan);
   if(clientData&&clientData.email){
     var n=document.getElementById('email-note');
     n.textContent='A copy has been sent to '+clientData.email;
