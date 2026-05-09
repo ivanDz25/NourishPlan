@@ -78,8 +78,10 @@ input[type=range]{flex:1;accent-color:var(--moss)}
 .mp-lbl{font-size:11px;color:var(--moss);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em}
 .strategy-note{font-size:13px;color:var(--muted);line-height:1.6;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)}
 .day-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:12px;box-shadow:var(--card-shadow)}
-.day-header{font-size:15px;font-weight:500;color:var(--moss);margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border)}
+document.getElementById('plan-output').innerHTML=parsePlan(plan);
 .meal-name{font-size:14px;font-weight:500;color:var(--bark);margin:1.25rem 0 6px}
+.meal-type-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--moss);margin:1.25rem 0 2px}
+.meal-title{font-size:15px;font-weight:600;color:var(--bark);margin-bottom:6px}
 .meal-name:first-of-type{margin-top:0}
 .meal-divider{border:none;border-top:1px solid var(--border);margin:1rem 0 0}
 .ingredients-label{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px}
@@ -366,7 +368,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
     <h2>Your Weekly Meal Plan</h2>
     <div class="results-actions">
       <button class="action-btn" id="copyBtn" onclick="copyPlan()">Copy text</button>
-      <button class="action-btn" onclick="window.print()">Save as PDF</button>
+      <button class="action-btn" onclick="window.print()" style="background:var(--moss);color:white;border-color:var(--moss)">⬇ Save as PDF</button>
       <button class="action-btn" onclick="startOver()">New plan</button>
     </div>
   </div>
@@ -497,9 +499,10 @@ if(!line||/^[=\-─═]{3,}$/.test(line))continue;
         var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
         var typeLabel=mealLabels[dayMealCount%4];
         dayMealCount++;
-        var dishName=line.replace(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:\s*/i,'').trim();
+var dishName=line.replace(/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:\s*/i,'').trim();
         if(!dishName)dishName=line;
-        html+='<div class="meal-name">'+typeLabel+': '+dishName+'</div>';
+        if(dayMealCount>1)html+='<hr class="meal-divider">';
+        html+='<div class="meal-type-label">'+typeLabel+'</div><div class="meal-title">'+dishName+'</div>';
         continue;
       }
     }
@@ -573,7 +576,7 @@ function showResults(plan,clientData){
   document.getElementById('loading-section').style.display='none';
   document.getElementById('results-section').style.display='block';
   document.getElementById('results-section').dataset.rawPlan=plan;
-  var parsed=parsePlan(plan); document.getElementById('plan-output').innerHTML=parsePlan(plan);
+  document.getElementById('plan-output').innerHTML=parsePlan(plan);
   if(clientData&&clientData.email){
     var n=document.getElementById('email-note');
     n.textContent='A copy has been sent to '+clientData.email;
