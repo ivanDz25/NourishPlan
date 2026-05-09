@@ -49,14 +49,13 @@ app.post('/generate', async (req, res) => {
 let text = data.content?.map(b => b.text || '').join('') || '';
     
     // Strip markdown that slips through
-    text = text
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/\*(.+?)\*/g, '$1')
-      .replace(/^#{1,6}\s+/gm, '')
-      .replace(/^>\s+/gm, '')
-      .replace(/`{1,3}[^`]*`{1,3}/g, '')
-      .replace(/^[-]{3,}$/gm, '─────────────────────────')
-      .replace(/^\s*[-*]\s+/gm, '• ');
+   text = text
+  .replace(/\*\*(.+?)\*\*/g, '$1')
+  .replace(/\*(.+?)\*/g, '$1')
+  .replace(/^#{1,6}\s+/gm, '')
+  .replace(/^>\s+/gm, '')
+  .replace(/`{1,3}[^`]*`{1,3}/g, '')
+  .replace(/^\s*[-*]\s+/gm, '• ');
 
     // Send email async — don't block the response
     if (clientData.email && process.env.RESEND_API_KEY) {
