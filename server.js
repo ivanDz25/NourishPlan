@@ -216,6 +216,7 @@ COOKING SETUP:
 - Currently tracks macros: ${d.tracking || 'No'}
 
 ADDITIONAL NOTES: ${d.notes || 'None'}
+HEALTH CONTEXT: ${d.healthContext || 'None'}
 
 PERSONALIZATION RULES:
 - Only use proteins the client listed as preferred
@@ -226,6 +227,7 @@ PERSONALIZATION RULES:
 - If they are a beginner tracker, keep meals simple and easy to log
 - Hard allergies must be completely absent from ALL meals and the grocery list
 - Scale all quantities for ${d.household} person(s)
+- If HEALTH CONTEXT is provided, treat it as a primary dietary filter. Adjust every meal to support the stated condition — anti-inflammatory, gut-friendly, kidney-friendly, nerve-supportive, etc. as appropriate. This overrides generic preferences where there is conflict.
 
 OUTPUT FORMAT — follow exactly:
 
