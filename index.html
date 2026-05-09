@@ -382,7 +382,7 @@ function updateBudget(v){document.getElementById('budgetDisplay').textContent='$
 function saveFormState(){
   try{
     var s={};
-    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','tracking','hardAllergies'].forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
+    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies'].forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
     s.budget=document.getElementById('budgetSlider').value;
     var g=document.querySelector('input[name=goal]:checked');
     var m=document.querySelector('input[name=macro]:checked');
@@ -634,7 +634,7 @@ async function handleSubmit(e){
     restrictions:restrictions,cuisine:cuisine,
     skill:document.getElementById('skill').value,
     dislikes:document.getElementById('dislikes').value,
-    notes:document.getElementById('notes').value
+    notes:document.getElementById('notes').value, healthContext:document.getElementById('healthContext').value
   };
   showLoading();
   try{
