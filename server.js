@@ -412,8 +412,7 @@ FORMATTING:
 Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 ═══════════════════════════════════════
 
-CALORIE & MACRO TARGETS
-`;
+CALORIE & MACRO TARGETS`;
 
   return { systemPrompt, userPrompt, prefill };
 }
