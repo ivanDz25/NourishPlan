@@ -19,13 +19,12 @@ app.post('/generate', async (req, res) => {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to Replit Secrets.' });
+    return res.status(500).json({ error: 'API key not configured.' });
   }
 
-  const prompt = buildPrompt(clientData);
+  const { systemPrompt, userPrompt, prefill } = buildPrompt(clientData);
 
   try {
-    // Generate plan
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -36,7 +35,11 @@ app.post('/generate', async (req, res) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 20000,
-        messages: [{ role: 'user', content: prompt }]
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: userPrompt },
+          { role: 'assistant', content: prefill }
+        ]
       })
     });
 
@@ -46,7 +49,8 @@ app.post('/generate', async (req, res) => {
     }
 
     const data = await response.json();
-    let text = data.content?.map(b => b.text || '').join('') || '';
+    // Prepend the prefill since the model continues from it
+    let text = prefill + (data.content?.map(b => b.text || '').join('') || '');
 
     // Strip markdown that slips through
     text = text
@@ -57,7 +61,7 @@ app.post('/generate', async (req, res) => {
       .replace(/`{1,3}[^`]*`{1,3}/g, '')
       .replace(/^\s*[-*]\s+/gm, '• ');
 
-    // Send email async — don't block the response
+    // Send email async
     if (clientData.email && process.env.RESEND_API_KEY) {
       sendEmail(clientData, text).catch(err => console.error('Email error:', err));
     }
@@ -74,7 +78,6 @@ app.post('/generate', async (req, res) => {
 async function sendEmail(clientData, planText) {
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.FROM_EMAIL || 'plans@nourishplan.co';
-
   const htmlBody = buildEmailHTML(clientData, planText);
 
   await fetch('https://api.resend.com/emails', {
@@ -94,7 +97,6 @@ async function sendEmail(clientData, planText) {
 }
 
 function buildEmailHTML(clientData, planText) {
-  // Convert plain text plan to readable HTML for email
   const escaped = planText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -105,7 +107,7 @@ function buildEmailHTML(clientData, planText) {
     .replace(/─+/g, '<hr style="border:0.5px solid #EEE;margin:8px 0">')
     .replace(/^(DAY \d+ —.+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
     .replace(/^(MEAL \d+:.+)$/gm, '<strong style="color:#2C2416">$1</strong>')
-    .replace(/^(CALORIE & MACRO TARGETS|7-DAY MEAL PLAN|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
+    .replace(/^(CALORIE & MACRO TARGETS|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
       '<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin:20px 0 8px">$1</h2>')
     .replace(/\n/g, '<br>');
 
@@ -115,21 +117,15 @@ function buildEmailHTML(clientData, planText) {
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#F7F4EE;font-family:'Helvetica Neue',Arial,sans-serif">
   <div style="max-width:640px;margin:0 auto;padding:32px 16px">
-
-    <!-- Header -->
     <div style="text-align:center;margin-bottom:32px">
       <div style="font-size:24px;font-weight:600;color:#2C2416">Nourish<span style="color:#3D5A3E">Plan</span></div>
       <div style="font-size:13px;color:#7A7060;margin-top:4px">Your personalized weekly meal plan</div>
     </div>
-
-    <!-- Hero -->
     <div style="background:#3D5A3E;border-radius:12px;padding:28px;text-align:center;margin-bottom:24px">
       <div style="color:#C8DFC8;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">Ready to cook</div>
       <div style="color:white;font-size:26px;font-weight:600;margin-bottom:4px">Hi ${clientData.name} 👋</div>
       <div style="color:#A8CCA8;font-size:14px">Your ${clientData.goal} meal plan is ready. Everything you need is below.</div>
     </div>
-
-    <!-- Macro summary -->
     <div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:20px;margin-bottom:24px">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin-bottom:12px">Your targets</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -151,20 +147,14 @@ function buildEmailHTML(clientData, planText) {
         </div>
       </div>
     </div>
-
-    <!-- Plan content -->
     <div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:24px;margin-bottom:24px;font-size:14px;line-height:1.8;color:#2C2416">
       ${formatted}
     </div>
-
-    <!-- CTA -->
     <div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
       <div style="font-size:15px;font-weight:600;color:#2C2416;margin-bottom:6px">Want a fresh plan every week?</div>
       <div style="font-size:13px;color:#7A7060;margin-bottom:16px">Reply to this email and we'll set it up for you.</div>
       <a href="https://nourishplan.onrender.com" style="display:inline-block;background:#3D5A3E;color:white;padding:12px 28px;border-radius:100px;text-decoration:none;font-size:14px;font-weight:500">Generate another plan</a>
     </div>
-
-    <!-- Footer -->
     <div style="text-align:center;font-size:12px;color:#7A7060;line-height:1.6">
       NourishPlan · No groceries sold · No spam<br>
       You received this because you requested a meal plan.
@@ -175,17 +165,16 @@ function buildEmailHTML(clientData, planText) {
 }
 
 function buildPrompt(d) {
-  // FIX 1: Robust case-insensitive meal detection
   const mealsLower = (d.meals || '').toLowerCase();
+  const has2Meals  = mealsLower.includes('2 meal');
+  const hasSnack   = mealsLower.includes('snack');
+  const has3Meals  = mealsLower.includes('3 meal');
+  const dinnerOnly = mealsLower.includes('dinner only');
 
+  // ── Meal structure sentence ─────────────────────────────────────────────────
   let mealStructure;
-  let has2Meals = mealsLower.includes('2 meal');
-  let hasSnack = mealsLower.includes('snack');
-  let has3Meals = mealsLower.includes('3 meal');
-  let dinnerOnly = mealsLower.includes('dinner only');
-
   if (has2Meals && hasSnack) {
-    mealStructure = 'EXACTLY 2 meals per day: LUNCH and DINNER only. NO breakfast whatsoever. NO third meal. Additionally include exactly 1 SNACK per day. The snack does not count as a meal.';
+    mealStructure = 'EXACTLY 2 meals per day: LUNCH and DINNER only. NO breakfast. NO third meal. Plus exactly 1 SNACK per day.';
   } else if (has2Meals) {
     mealStructure = 'EXACTLY 2 meals per day: LUNCH and DINNER only. NO breakfast. NO third meal. No snacks.';
   } else if (has3Meals && hasSnack) {
@@ -193,22 +182,32 @@ function buildPrompt(d) {
   } else if (has3Meals) {
     mealStructure = 'EXACTLY 3 meals: BREAKFAST, LUNCH, DINNER. No snacks.';
   } else if (dinnerOnly) {
-    mealStructure = 'DINNER only. One meal per day. Nothing else.';
+    mealStructure = 'DINNER only. One meal per day.';
   } else {
     mealStructure = d.meals;
   }
 
-  // FIX 2: Dynamic output template based on meal selection
+  // ── Allowed labels string (used in system prompt and formatting rules) ───────
+  let allowedLabels;
+  if (has2Meals && hasSnack)      allowedLabels = 'LUNCH, DINNER, SNACK';
+  else if (has2Meals)             allowedLabels = 'LUNCH, DINNER';
+  else if (has3Meals && hasSnack) allowedLabels = 'BREAKFAST, LUNCH, DINNER, SNACK';
+  else if (has3Meals)             allowedLabels = 'BREAKFAST, LUNCH, DINNER';
+  else if (dinnerOnly)            allowedLabels = 'DINNER';
+  else                            allowedLabels = 'BREAKFAST, LUNCH, DINNER';
+
+  // ── Per-day output template ─────────────────────────────────────────────────
   let mealDayTemplate;
   if (has2Meals && hasSnack) {
-    mealDayTemplate = `DAY [number] — [DAY NAME]
+    mealDayTemplate =
+`DAY [number] — [DAY NAME]
 
 LUNCH: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity, scaled for ${d.household} person(s)]
 Instructions:
-1. [Step one — be specific, include temps, times, techniques]
-2. [Step two]
+1. [Step — include temps, times, techniques]
+2. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -216,7 +215,7 @@ DINNER: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -224,18 +223,18 @@ SNACK: [Snack Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min`;
   } else if (has2Meals) {
-    mealDayTemplate = `DAY [number] — [DAY NAME]
+    mealDayTemplate =
+`DAY [number] — [DAY NAME]
 
 LUNCH: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity, scaled for ${d.household} person(s)]
 Instructions:
-1. [Step one — be specific, include temps, times, techniques]
-2. [Step two]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -243,17 +242,18 @@ DINNER: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min`;
   } else if (has3Meals && hasSnack) {
-    mealDayTemplate = `DAY [number] — [DAY NAME]
+    mealDayTemplate =
+`DAY [number] — [DAY NAME]
 
 BREAKFAST: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity, scaled for ${d.household} person(s)]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -261,7 +261,7 @@ LUNCH: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -269,7 +269,7 @@ DINNER: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -277,27 +277,29 @@ SNACK: [Snack Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min`;
   } else if (dinnerOnly) {
-    mealDayTemplate = `DAY [number] — [DAY NAME]
+    mealDayTemplate =
+`DAY [number] — [DAY NAME]
 
 DINNER: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity, scaled for ${d.household} person(s)]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min`;
   } else {
-    mealDayTemplate = `DAY [number] — [DAY NAME]
+    mealDayTemplate =
+`DAY [number] — [DAY NAME]
 
 BREAKFAST: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity, scaled for ${d.household} person(s)]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -305,7 +307,7 @@ LUNCH: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min
 
@@ -313,98 +315,63 @@ DINNER: [Meal Name Here]
 Ingredients:
 - [ingredient] — [quantity]
 Instructions:
-1. [Step one]
+1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min`;
   }
 
-  return `You are an elite registered dietitian and meal prep specialist with 15 years of experience working with families and individuals to hit specific body composition goals. Your meal plans are known for being practical, realistic, and precisely calibrated to the client's lifestyle, equipment, household size, and macro targets.
+  // ── SYSTEM PROMPT ───────────────────────────────────────────────────────────
+  const systemPrompt =
+`You are an elite registered dietitian generating structured meal plans.
 
-Your job is to generate a complete, detailed ${d.days}-day meal plan for the client below. Every meal must be something a real person would actually cook and eat. Quantities must be scaled exactly for ${d.household} person(s). Macros must be calculated accurately — not estimated loosely.
+ABSOLUTE CONSTRAINTS — these override everything:
 
-NON-NEGOTIABLE RULES — VIOLATING ANY OF THESE MAKES THE PLAN WRONG
+CONSTRAINT 1 — ALLOWED MEAL LABELS: The only section headers you may write for meals are: ${allowedLabels}
+Writing any other meal label is a critical failure. ${has2Meals ? 'BREAKFAST IS COMPLETELY FORBIDDEN in this plan. Every day begins with LUNCH.' : ''}${dinnerOnly ? 'Only DINNER appears each day.' : ''}
 
-RULE 1 — MEAL STRUCTURE: ${mealStructure}
-Do not add, remove, or rename any meals. Follow this exactly every single day.
-The output format below shows only the meals for this client's selection. Do not add any meals not shown in the template.
+CONSTRAINT 2 — MEAL COUNT PER DAY: Exactly the meals listed in CONSTRAINT 1. No more. No fewer. Every single day.
 
-RULE 2 — BIGGEST MEAL: ${d.biggestMeal}
-This meal MUST have the highest calorie count of the day — at least 200 calories more than any other single meal.
-VERIFICATION STEP: Before writing each day, mentally add up calories per meal. Confirm ${d.biggestMeal} is the largest. If it is not, adjust ingredient quantities until it is. Never output a day where ${d.biggestMeal} is not the highest-calorie meal.
+CONSTRAINT 3 — BIGGEST MEAL ENFORCEMENT: ${d.biggestMeal} must have more calories than every other meal that day by at least 200 calories. Check this before writing each day. If ${d.biggestMeal} would not be largest, increase its ingredients until it is.
 
-RULE 3 — ALLERGIES: ${d.hardAllergies || 'None'}
-These ingredients are completely banned from every meal and the grocery list. No exceptions, no substitutions that contain them.
+CONSTRAINT 4 — OUTPUT: Plain text only. No markdown. No asterisks. No # headers. Dividers use ═ only. Bullets use • only.
 
-RULE 4 — SCALING: All ingredient quantities are scaled for ${d.household} person(s). Never use single-serving amounts. Macros are calculated for the full household serving.
+CONSTRAINT 5 — BANNED INGREDIENTS: ${d.hardAllergies || 'None'} — must not appear anywhere in the plan or grocery list.`;
 
-RULE 5 — PROTEINS: Only use proteins from this list: ${d.proteins || 'No preference'}. Do not use other protein sources.
+  // ── USER PROMPT ─────────────────────────────────────────────────────────────
+  const userPrompt =
+`Generate a complete ${d.days}-day meal plan for this client.
 
-RULE 6 — EQUIPMENT: Only use cooking methods compatible with: ${d.equipment || 'Standard kitchen'}.
+CLIENT:
+- Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
+- Activity: ${d.activity} | Goal: ${d.goal} | Macro preference: ${d.macro}
+- Household: ${d.household} person(s) | Days: ${d.days} | Budget: ${d.budget || '$150'}/wk
 
- CLIENT PROFILE 
-- Name: ${d.name || 'Client'}
-- Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
-- Activity level: ${d.activity}
-- Goal: ${d.goal}
-- Macro preference: ${d.macro}
-- Household size: ${d.household} person(s)
-- Days to cover: ${d.days} days/week
-- Weekly grocery budget: ${d.budget || '$150'}
+MEAL STRUCTURE (follow exactly): ${mealStructure}
+BIGGEST MEAL: ${d.biggestMeal} — highest calories every day, min 200 cal above next meal
+PROTEINS ALLOWED: ${d.proteins || 'No preference'}
+EQUIPMENT: ${d.equipment || 'Standard kitchen'}
+ALLERGIES (banned everywhere): ${d.hardAllergies || 'None'}
+RESTRICTIONS: ${d.restrictions || 'None'}
+CUISINE: ${d.cuisine || 'No preference'}
+AVOID: ${d.dislikes || 'None'}
+SKILL: ${d.skill} | REPEATS OK: ${d.mealRepeat || 'Somewhat'} | TRACKS MACROS: ${d.tracking || 'No'}
+HEALTH CONTEXT: ${d.healthContext || 'None'}
+NOTES: ${d.notes || 'None'}
 
- FOOD PREFERENCES 
-- Dietary restrictions: ${d.restrictions || 'None'}
-- Cuisine preferences: ${d.cuisine || 'No preference'}
-- Foods to avoid (preference, not allergy): ${d.dislikes || 'None'}
-- Cooking skill/time: ${d.skill}
-- Okay with meal repeats: ${d.mealRepeat || 'Somewhat'}
-- Currently tracks macros: ${d.tracking || 'No'}
-- If macro tracking is detailed, give precise gram-level numbers. If beginner, round to nearest 5g.
+Scale all quantities for ${d.household} person(s). Macros are for the full household serving.
 
- HEALTH CONTEXT 
-${d.healthContext || 'None'}
-If health context is provided, treat it as a primary dietary filter that overrides generic preferences. Adjust every meal accordingly — anti-inflammatory, gut-friendly, kidney-friendly, etc.
-
- ADDITIONAL NOTES 
-${d.notes || 'None'}
-
-PERSONALIZATION RULES:
-- Only use proteins the client listed as preferred
-- Only use cooking methods compatible with their equipment
-- Make ${d.biggestMeal} the largest calorie meal every single day
-- If they dislike repeats, ensure every meal is unique
-- If they track carefully, be very precise with macro numbers
-- If they are a beginner tracker, keep meals simple and easy to log
-- Hard allergies must be completely absent from ALL meals and the grocery list
-- Scale all quantities for ${d.household} person(s)
-- If HEALTH CONTEXT is provided, treat it as a primary dietary filter. Adjust every meal to support the stated condition — anti-inflammatory, gut-friendly, kidney-friendly, nerve-supportive, etc. as appropriate. This overrides generic preferences where there is conflict.
-
-OUTPUT FORMAT — follow exactly:
-
-WEEKLY MEAL PLAN FOR ${(d.name || 'CLIENT').toUpperCase()}
-Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-═══════════════════════════════════════
-
-CALORIE & MACRO TARGETS
-Daily calories: [calculate TDEE from stats and adjust for goal]
-Protein: Xg | Carbs: Xg | Fat: Xg
-Strategy note: [1 sentence on approach for their specific goal]
-
-═══════════════════════════════════════
-${d.days}-DAY MEAL PLAN
-═══════════════════════════════════════
-
-Generate exactly ${d.days} days starting Monday. Do not generate more days than this number.
-
-For each day, use EXACTLY this format with no deviations. Do not add any meal types not shown below:
+Use EXACTLY this format for every day. No extra meals. No missing meals:
 
 ${mealDayTemplate}
+
+After all ${d.days} days, output:
 
 ═══════════════════════════════════════
 WEEKLY GROCERY LIST
 ═══════════════════════════════════════
 
 PRODUCE:
-• [item] — [total quantity needed for the week]
+• [item] — [total quantity for the week]
 
 PROTEIN & MEAT:
 • [item] — [total quantity]
@@ -424,27 +391,31 @@ ESTIMATED TOTAL: $XX–$XX
 ═══════════════════════════════════════
 MEAL PREP TIPS
 ═══════════════════════════════════════
-1. [Specific tip for this client's cooking style and equipment]
-2. [Batch cooking suggestion based on their meals and repeat preference]
-3. [Storage/prep tip]
-4. [Budget-stretching tip relevant to their grocery list]
-5. [Macro tracking tip calibrated to their tracking experience level]
+1. [Tip for their cooking style and equipment]
+2. [Batch cooking suggestion]
+3. [Storage tip]
+4. [Budget tip]
+5. [Macro tracking tip for their level]
 
-CRITICAL FORMATTING RULES — follow exactly:
-- Use PLAIN TEXT ONLY. Zero markdown. No **, no ##, no --, no >, no backticks.
-- Use the exact divider characters shown above (═ and ─), nothing else.
-- Bullet points use • only.
-- Numbers use digits only (e.g. 180g not **180g**).
-- Do not bold, italicize, or underline anything.
-- Do not add extra commentary outside the format above.
-- Meal labels MUST use ONLY these exact words: BREAKFAST, LUNCH, DINNER, SNACK — nothing else.
-- NEVER use time-of-day labels like (Morning), (Late Morning), (Evening), (Midday), (Afternoon).
-- NEVER use MEAL 1, MEAL 2 numbering.
-- NEVER put the meal type in parentheses.
-- Format MUST be exactly: BREAKFAST: [Meal Name] on a single line, then Ingredients: on the next line.
-- Example correct: DINNER: Grilled Chicken Thighs with Roasted Vegetables
-- Example wrong: MEAL 1 (Breakfast): Scrambled Eggs
-Be thorough and specific. Real quantities, real macro numbers. No vague amounts.`;
+FORMATTING:
+- Plain text only. No **, no ##, no backticks.
+- Only these meal labels allowed: ${allowedLabels}
+- ${has2Meals ? 'Never write BREAKFAST. Days start with LUNCH.' : 'Follow the meal structure exactly.'}
+- Bullets: • only. Dividers: ═ only.
+- Be thorough: real quantities, real macro numbers, real cooking steps.`;
+
+  // ── PREFILL — model must continue from here, locking in the opening ─────────
+  // This is the most reliable constraint: the model physically cannot open with
+  // BREAKFAST because we have already written the plan header and it must continue.
+  const prefill =
+`WEEKLY MEAL PLAN FOR ${(d.name || 'CLIENT').toUpperCase()}
+Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+═══════════════════════════════════════
+
+CALORIE & MACRO TARGETS
+`;
+
+  return { systemPrompt, userPrompt, prefill };
 }
 
 const PORT = process.env.PORT || 3000;
