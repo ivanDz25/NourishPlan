@@ -46,16 +46,16 @@ app.post('/generate', async (req, res) => {
     }
 
     const data = await response.json();
-let text = data.content?.map(b => b.text || '').join('') || '';
-    
+    let text = data.content?.map(b => b.text || '').join('') || '';
+
     // Strip markdown that slips through
-   text = text
-  .replace(/\*\*(.+?)\*\*/g, '$1')
-  .replace(/\*(.+?)\*/g, '$1')
-  .replace(/^#{1,6}\s+/gm, '')
-  .replace(/^>\s+/gm, '')
-  .replace(/`{1,3}[^`]*`{1,3}/g, '')
-  .replace(/^\s*[-*]\s+/gm, '• ');
+    text = text
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/`{1,3}[^`]*`{1,3}/g, '')
+      .replace(/^\s*[-*]\s+/gm, '• ');
 
     // Send email async — don't block the response
     if (clientData.email && process.env.RESEND_API_KEY) {
@@ -175,15 +175,148 @@ function buildEmailHTML(clientData, planText) {
 }
 
 function buildPrompt(d) {
-  const mealStructure = d.meals.includes('2 meals') 
-    ? 'EXACTLY 2 meals: LUNCH and DINNER only. NO breakfast. NO third meal. Snacks are separate and do not count as meals.'
-    : d.meals.includes('3 meals + snack') 
-    ? 'EXACTLY 3 meals (BREAKFAST, LUNCH, DINNER) plus 1 SNACK.'
-    : d.meals.includes('3 meals')
-    ? 'EXACTLY 3 meals: BREAKFAST, LUNCH, DINNER. No snacks.'
-    : d.meals.includes('Dinner only')
-    ? 'DINNER only. One meal per day.'
-    : d.meals;
+  // FIX 1: Robust case-insensitive meal detection
+  const mealsLower = (d.meals || '').toLowerCase();
+
+  let mealStructure;
+  let has2Meals = mealsLower.includes('2 meal');
+  let hasSnack = mealsLower.includes('snack');
+  let has3Meals = mealsLower.includes('3 meal');
+  let dinnerOnly = mealsLower.includes('dinner only');
+
+  if (has2Meals && hasSnack) {
+    mealStructure = 'EXACTLY 2 meals per day: LUNCH and DINNER only. NO breakfast whatsoever. NO third meal. Additionally include exactly 1 SNACK per day. The snack does not count as a meal.';
+  } else if (has2Meals) {
+    mealStructure = 'EXACTLY 2 meals per day: LUNCH and DINNER only. NO breakfast. NO third meal. No snacks.';
+  } else if (has3Meals && hasSnack) {
+    mealStructure = 'EXACTLY 3 meals (BREAKFAST, LUNCH, DINNER) plus 1 SNACK per day.';
+  } else if (has3Meals) {
+    mealStructure = 'EXACTLY 3 meals: BREAKFAST, LUNCH, DINNER. No snacks.';
+  } else if (dinnerOnly) {
+    mealStructure = 'DINNER only. One meal per day. Nothing else.';
+  } else {
+    mealStructure = d.meals;
+  }
+
+  // FIX 2: Dynamic output template based on meal selection
+  let mealDayTemplate;
+  if (has2Meals && hasSnack) {
+    mealDayTemplate = `DAY [number] — [DAY NAME]
+
+LUNCH: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity, scaled for ${d.household} person(s)]
+Instructions:
+1. [Step one — be specific, include temps, times, techniques]
+2. [Step two]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+DINNER: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+SNACK: [Snack Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min`;
+  } else if (has2Meals) {
+    mealDayTemplate = `DAY [number] — [DAY NAME]
+
+LUNCH: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity, scaled for ${d.household} person(s)]
+Instructions:
+1. [Step one — be specific, include temps, times, techniques]
+2. [Step two]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+DINNER: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min`;
+  } else if (has3Meals && hasSnack) {
+    mealDayTemplate = `DAY [number] — [DAY NAME]
+
+BREAKFAST: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity, scaled for ${d.household} person(s)]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+LUNCH: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+DINNER: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+SNACK: [Snack Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min`;
+  } else if (dinnerOnly) {
+    mealDayTemplate = `DAY [number] — [DAY NAME]
+
+DINNER: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity, scaled for ${d.household} person(s)]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min`;
+  } else {
+    mealDayTemplate = `DAY [number] — [DAY NAME]
+
+BREAKFAST: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity, scaled for ${d.household} person(s)]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+LUNCH: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min
+
+DINNER: [Meal Name Here]
+Ingredients:
+- [ingredient] — [quantity]
+Instructions:
+1. [Step one]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
+Prep time: [X] min`;
+  }
 
   return `You are an elite registered dietitian and meal prep specialist with 15 years of experience working with families and individuals to hit specific body composition goals. Your meal plans are known for being practical, realistic, and precisely calibrated to the client's lifestyle, equipment, household size, and macro targets.
 
@@ -193,9 +326,11 @@ NON-NEGOTIABLE RULES — VIOLATING ANY OF THESE MAKES THE PLAN WRONG
 
 RULE 1 — MEAL STRUCTURE: ${mealStructure}
 Do not add, remove, or rename any meals. Follow this exactly every single day.
+The output format below shows only the meals for this client's selection. Do not add any meals not shown in the template.
 
 RULE 2 — BIGGEST MEAL: ${d.biggestMeal}
-The meal listed above must have the highest calories AND protein of the day. It must be at least 200 calories more than any other meal. If dinner is the biggest meal, breakfast and lunch must both be smaller than dinner. Never let breakfast be the largest meal unless "Breakfast" was explicitly selected.
+This meal MUST have the highest calorie count of the day — at least 200 calories more than any other single meal.
+VERIFICATION STEP: Before writing each day, mentally add up calories per meal. Confirm ${d.biggestMeal} is the largest. If it is not, adjust ingredient quantities until it is. Never output a day where ${d.biggestMeal} is not the highest-calorie meal.
 
 RULE 3 — ALLERGIES: ${d.hardAllergies || 'None'}
 These ingredients are completely banned from every meal and the grocery list. No exceptions, no substitutions that contain them.
@@ -235,7 +370,7 @@ ${d.notes || 'None'}
 PERSONALIZATION RULES:
 - Only use proteins the client listed as preferred
 - Only use cooking methods compatible with their equipment
-- If biggest meal is dinner, put more calories/protein there
+- Make ${d.biggestMeal} the largest calorie meal every single day
 - If they dislike repeats, ensure every meal is unique
 - If they track carefully, be very precise with macro numbers
 - If they are a beginner tracker, keep meals simple and easy to log
@@ -260,44 +395,9 @@ ${d.days}-DAY MEAL PLAN
 
 Generate exactly ${d.days} days starting Monday. Do not generate more days than this number.
 
-For each day, use EXACTLY this format with no deviations:
+For each day, use EXACTLY this format with no deviations. Do not add any meal types not shown below:
 
-DAY [number] — [DAY NAME]
-
-BREAKFAST: [Meal Name Here]
-Ingredients:
-- [ingredient] — [quantity, scaled for ${d.household} person(s)]
-- [ingredient] — [quantity]
-Instructions:
-1. [Step one — be specific, include temps, times, techniques]
-2. [Step two]
-3. [Continue until dish is complete — typically 4-7 steps]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-LUNCH: [Meal Name Here]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step one]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-DINNER: [Meal Name Here]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step one]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-SNACK: [Snack Name Here]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step one]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
+${mealDayTemplate}
 
 ═══════════════════════════════════════
 WEEKLY GROCERY LIST
@@ -342,8 +442,8 @@ CRITICAL FORMATTING RULES — follow exactly:
 - NEVER use MEAL 1, MEAL 2 numbering.
 - NEVER put the meal type in parentheses.
 - Format MUST be exactly: BREAKFAST: [Meal Name] on a single line, then Ingredients: on the next line.
-- Example correct: BREAKFAST: Scrambled Eggs with Turkey Sausage
-- Example wrong: MEAL 1 (Breakfast): (Breakfast): Scrambled Eggs
+- Example correct: DINNER: Grilled Chicken Thighs with Roasted Vegetables
+- Example wrong: MEAL 1 (Breakfast): Scrambled Eggs
 Be thorough and specific. Real quantities, real macro numbers. No vague amounts.`;
 }
 
