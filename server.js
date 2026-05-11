@@ -305,20 +305,38 @@ Prep time: [X] min`;
 ABSOLUTE CONSTRAINTS:
 
 1. ALLOWED MEAL LABELS ONLY: ${allowedLabels}
-   Any other label is a critical error. ${has2Meals ? 'BREAKFAST IS FORBIDDEN. Every day starts with LUNCH.' : ''}${dinnerOnly ? 'DINNER only each day.' : ''}
+   ${has2Meals ? 'BREAKFAST IS FORBIDDEN. Every day starts with LUNCH.' : ''}${dinnerOnly ? 'DINNER only each day.' : ''}
 
-2. MEAL COUNT: Exactly the meals in constraint 1. Every day. No exceptions.
+2. COMPLETE ALL DAYS: Write every meal for every single day before the grocery list. The plan has ${d.days} days. All ${d.days} must be written in full. Never skip ahead.
 
-3. COMPLETE ALL DAYS FIRST: You must write all ${d.days} days of meals in full before writing the grocery list. Never skip days. Never summarize. Write every meal for every day completely.
+3. BIGGEST MEAL: ${d.biggestMeal} must have the highest calories every day — at least 200 cal above next highest.
 
-4. BIGGEST MEAL: ${d.biggestMeal} must have the highest calories every day — at least 200 cal above the next highest meal.
+4. PLAIN TEXT ONLY: No markdown, no asterisks, no # headers. Bullets: •  Dividers: ═
 
-5. PLAIN TEXT ONLY: No markdown. No asterisks. No # headers. Bullets: •. Dividers: ═.
+5. BANNED: ${d.hardAllergies || 'None'}`;
 
-6. BANNED INGREDIENTS: ${d.hardAllergies || 'None'}`;
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Calculate a placeholder TDEE for the prefill so the macro section looks complete
+  // and the model continues into Day 1 rather than regenerating the header
+  const weight = parseFloat(d.weight) || 180;
+  const age = parseFloat(d.age) || 30;
+  const isMale = (d.sex || '').toLowerCase().includes('male');
+  const bmr = isMale
+    ? Math.round(10 * weight * 0.453592 + 6.25 * 170 - 5 * age + 5)
+    : Math.round(10 * weight * 0.453592 + 6.25 * 170 - 5 * age - 161);
+  const tdee = Math.round(bmr * 1.2);
+  const goalCalories = d.goal && d.goal.toLowerCase().includes('lose')
+    ? tdee - 500
+    : d.goal && d.goal.toLowerCase().includes('bulk')
+    ? tdee + 300
+    : tdee;
+  const protein = Math.round(weight * 0.453592 * 2.2);
+  const fat = Math.round(goalCalories * 0.28 / 9);
+  const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
 
   const userPrompt =
-`Generate a complete ${d.days}-day meal plan for this client. Write ALL ${d.days} days of meals completely before the grocery list.
+`Generate a complete ${d.days}-day meal plan for this client.
 
 CLIENT:
 - Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
@@ -339,14 +357,14 @@ NOTES: ${d.notes || 'None'}
 
 Scale all quantities for ${d.household} person(s). Macros are for the full household serving.
 
-STEP 1 — Write the macro targets section (calories, protein, carbs, fat, strategy note).
-STEP 2 — Write all ${d.days} days using this exact format:
+Continue the plan from where it left off. The header and macro targets are already written.
+Now write all ${d.days} days of meals using this exact per-day format:
 
 ${mealDayTemplate}
 
-Repeat for all ${d.days} days. Do not skip any day. Do not proceed to the grocery list until all ${d.days} days are written.
+Write Day 1 through Day ${d.days} completely. Do not skip any day. Do not jump to the grocery list until Day ${d.days} is fully written.
 
-STEP 3 — After all days are complete, write:
+After Day ${d.days} is complete, write the grocery list and meal prep tips.
 
 ═══════════════════════════════════════
 WEEKLY GROCERY LIST
@@ -379,18 +397,27 @@ MEAL PREP TIPS
 4. [Budget tip]
 5. [Macro tracking tip]
 
-RULES: Plain text only. Only these meal labels: ${allowedLabels}. ${has2Meals ? 'Never write BREAKFAST.' : ''} Bullets: •. Dividers: ═.`;
+Only these meal labels allowed: ${allowedLabels}. ${has2Meals ? 'Never write BREAKFAST.' : ''} Plain text only.`;
 
-  // Prefill: commits the model to the header + macro section start + Day 1 first meal
-  // This prevents skipping days and enforces the correct first meal label
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  // Deep prefill: header + complete macro section + Day 1 opener + first meal label
+  // Model is now mid-meal on Day 1 — it cannot jump to grocery list from here
   const prefill =
 `WEEKLY MEAL PLAN FOR ${(d.name || 'CLIENT').toUpperCase()}
 Generated: ${today}
 ═══════════════════════════════════════
 
 CALORIE & MACRO TARGETS
-Daily calories:`;
+Daily calories: ${goalCalories} cal
+Protein: ${protein}g | Carbs: ${carbs}g | Fat: ${fat}g
+Strategy note: Targeting a ${Math.abs(goalCalories - tdee)} calorie ${goalCalories < tdee ? 'deficit' : 'surplus'} from estimated TDEE of ${tdee} to support ${d.goal.toLowerCase()}.
+
+═══════════════════════════════════════
+${d.days}-DAY MEAL PLAN
+═══════════════════════════════════════
+
+DAY 1 — MONDAY
+
+${firstMealLabel}:`;
 
   return { systemPrompt, userPrompt, prefill };
 }
