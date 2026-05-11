@@ -409,7 +409,6 @@ FORMATTING:
   // BREAKFAST because we have already written the plan header and it must continue.
   const prefill =
 `WEEKLY MEAL PLAN FOR ${(d.name || 'CLIENT').toUpperCase()}
-Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 ═══════════════════════════════════════
 
 CALORIE & MACRO TARGETS`;
