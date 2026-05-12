@@ -124,8 +124,8 @@ function buildEmailHTML(clientData, planText) {
 }
 
 const mealLabelMap = {
-  '2 meals + snacks': ['MEAL 1', 'MEAL 2', 'SNACK'],
-  '2 meals/day': ['MEAL 1', 'MEAL 2'],
+  '2 meals + snacks': ['LUNCH', 'DINNER', 'SNACK'], 
+  '2 meals/day': ['LUNCH', 'DINNER'],                  
   '3 meals': ['BREAKFAST', 'LUNCH', 'DINNER'],
   '3 meals/day': ['BREAKFAST', 'LUNCH', 'DINNER'],
   '3 meals + snacks': ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'],
