@@ -491,13 +491,12 @@ if(!line||/^[=\-─═]{3,}$/.test(line))continue;
       continue;
     }
     if(inDay){
-      var isMealLabel=/^(BREAKFAST|LUNCH|DINNER|SNACKS?)\s*:/i.test(line);
+      var isMealLabel=/^(BREAKFAST|LUNCH|DINNER|SNACKS?|MEAL [1-5])\s*:/i.test(line);
       var isDishName=!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT)/i.test(line);
       if(isMealLabel||isDishName){
         if(inIngredients){html+='</ul>';inIngredients=false}
         if(inInstructions){html+='</ol>';inInstructions=false}
-        var mealLabels=['BREAKFAST','LUNCH','DINNER','SNACK'];
-        var typeLabel=mealLabels[dayMealCount%4];
+        var typeLabel=line.replace(/\s*:.*$/,'').trim();
         dayMealCount++;
 .replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5)$/gm, ...)
         if(!dishName)dishName=line;
