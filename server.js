@@ -16,8 +16,6 @@ app.post('/generate', async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
 
   const { systemPrompt, userPrompt } = buildPrompt(clientData);
-  console.log('MEALS VALUE:', clientData.meals);
-  console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 meal'));
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -95,11 +93,11 @@ function buildEmailHTML(clientData, planText) {
   const formatted = escaped
     .replace(/═+/g, '<hr style="border:1px solid #DDD8CC;margin:16px 0">')
     .replace(/─+/g, '<hr style="border:0.5px solid #EEE;margin:8px 0">')
-.replace(/^(DAY \d+ —.+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
-.replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5)$/gm,
-  '<h3 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#3D5A3E;margin:16px 0 4px">$1</h3>')
-.replace(/^(CALORIE & MACRO TARGETS|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
-  '<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin:20px 0 8px">$1</h2>')
+    .replace(/^(DAY \d+ —.+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
+    .replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5)$/gm,
+      '<h3 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#3D5A3E;margin:16px 0 4px">$1</h3>')
+    .replace(/^(CALORIE & MACRO TARGETS|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
+      '<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin:20px 0 8px">$1</h2>')
     .replace(/\n/g, '<br>');
 
   return `<!DOCTYPE html>
@@ -162,13 +160,19 @@ const mealLabelMap = {
 };
 
 function buildPrompt(d) {
- console.log('d.meals raw value:', JSON.stringify(d.meals));
- console.log('labels resolved:', labels);
- console.log('hasSnack:', hasSnack);
-  const labels = mealLabelMap[d.meals] || ['MEAL 1', 'MEAL 2', 'MEAL 3'];
+  const mealKey = Object.keys(mealLabelMap).find(k =>
+    k.toLowerCase().trim() === (d.meals || '').toLowerCase().trim()
+  );
+  const labels = mealLabelMap[mealKey] || ['MEAL 1', 'MEAL 2', 'MEAL 3'];
   const allowedLabels = labels.join(', ');
   const hasSnack = labels.includes('SNACK');
   const mealCount = labels.filter(l => l !== 'SNACK').length;
+
+  console.log('d.meals raw value:', JSON.stringify(d.meals));
+  console.log('mealKey matched:', mealKey);
+  console.log('labels resolved:', labels);
+  console.log('hasSnack:', hasSnack);
+
   const mealStructureInstruction = `Each day must contain EXACTLY these meal sections in this order: ${allowedLabels}. Use ONLY these labels. Do not add, rename, or reorder them.`;
   const favoriteMeal = (d.biggestMeal || 'Dinner (evening)');
 
@@ -176,18 +180,18 @@ function buildPrompt(d) {
   const mealDayTemplate = `DAY [number] — [DAY NAME]
 
 ${labels.map(label => isSnack(label)
-  ? `${label}: [Snack Name — simple, no cooking, ~200 cal]
+    ? `${label}: [Snack Name — simple, no cooking, ~200 cal]
 Ingredients:
 - [ingredient] — [quantity]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`
-  : `${label}: [Meal Name]
+    : `${label}: [Meal Name]
 Ingredients:
 - [ingredient] — [quantity for ${d.household} person(s)]
 Instructions:
 1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
 Prep time: [X] min`
-).join('\n')}`;
+  ).join('\n')}`;
 
   // Calorie math
   const weight = parseFloat(d.weight) || 180;
@@ -200,8 +204,8 @@ Prep time: [X] min`
   const goalCalories = d.goal && d.goal.toLowerCase().includes('lose')
     ? tdee - 500
     : d.goal && d.goal.toLowerCase().includes('bulk')
-    ? tdee + 300
-    : tdee;
+      ? tdee + 300
+      : tdee;
   const protein = Math.round(weight * 0.453592 * 2.2);
   const fat = Math.round(goalCalories * 0.28 / 9);
   const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
@@ -210,7 +214,7 @@ Prep time: [X] min`
   const favCals = Math.round(mealCals * 0.55);
   const otherCals = mealCount > 1 ? Math.round((mealCals - favCals) / (mealCount - 1)) : 0;
 
-const systemPrompt =
+  const systemPrompt =
 `You are an elite registered dietitian generating structured meal plans.
 
 RULES YOU NEVER BREAK:
@@ -225,17 +229,16 @@ RULES YOU NEVER BREAK:
 
 4. COMPLETE ALL DAYS: Write all ${d.days} days in full before writing the grocery list. Never skip ahead.
 
-5. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers. Use bullet symbol for lists and ═ for dividers.
+5. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers. Use bullet symbol • for lists and ═ for dividers.
 
 6. BANNED INGREDIENTS: ${d.hardAllergies || 'None'} — never appear in any meal or the grocery list.`;
 
- const userPrompt = `CRITICAL FORMATTING RULE: You must use ONLY these section headers each day: ${allowedLabels}. 
-The word BREAKFAST is completely forbidden in this meal plan. Do not write it anywhere.
-The word LUNCH is completely forbidden in this meal plan. Do not write it anywhere.  
-The word DINNER is completely forbidden in this meal plan. Do not write it anywhere.
-If you write BREAKFAST, LUNCH, or DINNER anywhere, the output is invalid and must be rejected.
+  const userPrompt =
+`CRITICAL FORMATTING RULE: You must use ONLY these section headers each day: ${allowedLabels}.
+The words BREAKFAST, LUNCH, and DINNER are completely forbidden in this meal plan unless they appear in the allowed labels above. Do not write them anywhere as section headers.
+If you write a forbidden label anywhere, the output is invalid.
 
-Generate a complete ${d.days}-day meal plan...`
+Generate a complete ${d.days}-day meal plan for this client.
 
 CLIENT:
 - Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
@@ -277,19 +280,19 @@ WEEKLY GROCERY LIST
 ═══════════════════════════════════════
 
 PRODUCE:
-- [item] — [total quantity for the week]
+• [item] — [total quantity for the week]
 
 PROTEIN & MEAT:
-- [item] — [total]
+• [item] — [total]
 
 DAIRY & EGGS:
-- [item] — [total]
+• [item] — [total]
 
 PANTRY & DRY GOODS:
-- [item] — [total]
+• [item] — [total]
 
 FROZEN:
-- [item] — [total]
+• [item] — [total]
 
 ESTIMATED TOTAL: $XX-$XX
 (Budget: ${d.budget || '$150'} | ${d.household} person(s), ${d.days} days)
