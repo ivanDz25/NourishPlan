@@ -15,10 +15,9 @@ app.post('/generate', async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
 
-  const { systemPrompt, userPrompt, prefill } = buildPrompt(clientData);
-  console.log('PREFILL FIRST 100 chars:', prefill.substring(0, 100));
-console.log('MEALS VALUE:', clientData.meals);
-console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 meal'));
+  const { systemPrompt, userPrompt } = buildPrompt(clientData);
+  console.log('MEALS VALUE:', clientData.meals);
+  console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 meal'));
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -33,7 +32,7 @@ console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 mea
         max_tokens: 20000,
         system: systemPrompt,
         messages: [
-          { role: 'user', content: userPrompt },
+          { role: 'user', content: userPrompt }
         ]
       })
     });
@@ -44,7 +43,7 @@ console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 mea
     }
 
     const data = await response.json();
-    let text = prefill + (data.content?.map(b => b.text || '').join('') || '');
+    let text = (data.content?.map(b => b.text || '').join('') || '');
 
     text = text
       .replace(/\*\*(.+?)\*\*/g, '$1')
@@ -176,14 +175,14 @@ function buildPrompt(d) {
   else if (dinnerOnly)            allowedLabels = 'DINNER';
   else                            allowedLabels = 'BREAKFAST, LUNCH, DINNER';
 
-const firstMealLabel = has2Meals ? 'LUNCH' : dinnerOnly ? 'DINNER' : 'BREAKFAST';
-  
+  const firstMealLabel = has2Meals ? 'LUNCH' : dinnerOnly ? 'DINNER' : 'BREAKFAST';
+
   let mealDayTemplate;
   if (has2Meals && hasSnack) {
     mealDayTemplate =
 `DAY [number] — [DAY NAME]
 
-BREAKFAST: [Meal Name]
+LUNCH: [Meal Name]
 Ingredients:
 - [ingredient] — [quantity for ${d.household} person(s)]
 Instructions:
@@ -203,15 +202,12 @@ Prep time: [X] min
 SNACK: [Snack Name]
 Ingredients:
 - [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min`;
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`;
   } else if (has2Meals) {
     mealDayTemplate =
 `DAY [number] — [DAY NAME]
 
-BREAKFAST: [Meal Name]
+LUNCH: [Meal Name]
 Ingredients:
 - [ingredient] — [quantity for ${d.household} person(s)]
 Instructions:
@@ -257,10 +253,7 @@ Prep time: [X] min
 SNACK: [Snack Name]
 Ingredients:
 - [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min`;
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`;
   } else if (dinnerOnly) {
     mealDayTemplate =
 `DAY [number] — [DAY NAME]
@@ -302,25 +295,21 @@ Prep time: [X] min`;
   }
 
   const systemPrompt =
-`You are an elite registered dietitian generating structured meal plans for high performing acheivers like world renowned athletes and entrepreneurs.
+`You are an elite registered dietitian generating structured meal plans.
 
 ABSOLUTE CONSTRAINTS:
 
 1. ALLOWED MEAL LABELS ONLY: ${allowedLabels}
-   ${has2Meals ? 'Every day starts with BREAKFAST.' : ''}${dinnerOnly ? 'DINNER only each day.' : ''}
+   ${has2Meals ? 'BREAKFAST IS FORBIDDEN. Every day starts with LUNCH.' : ''}${dinnerOnly ? 'DINNER only each day.' : ''}
 
 2. COMPLETE ALL DAYS: Write every meal, ingredient list, and cooking instructions for every single day before the weekly grocery list. The plan has ${d.days} days. All ${d.days} must be written in full. Never skip ahead.
 
 3. BIGGEST MEAL: ${d.biggestMeal} must have the highest calories every day — at least 200 cal above next highest.
 
-4. PLAIN TEXT ONLY: No markdown, no asterisks, no # headers. Bullets: •  Dividers: ═
+4. PLAIN TEXT ONLY: No markdown, no asterisks, no # headers. Bullets use • and dividers use ═
 
-5. BANNED: ${d.hardAllergies || 'None'}`;
+5. BANNED INGREDIENTS: ${d.hardAllergies || 'None'}`;
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-  // Calculate a placeholder TDEE for the prefill so the macro section looks complete
-  // and the model continues into Day 1 rather than regenerating the header
   const weight = parseFloat(d.weight) || 180;
   const age = parseFloat(d.age) || 30;
   const isMale = (d.sex || '').toLowerCase().includes('male');
@@ -337,15 +326,15 @@ ABSOLUTE CONSTRAINTS:
   const fat = Math.round(goalCalories * 0.28 / 9);
   const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
 
-  const userPrompt =
-STARTING NOW: Write the complete meal plan. First line of your response must be: "${firstMealLabel}: [meal name]" — nothing before it.
-    
+  const userPrompt = `Generate a complete ${d.days}-day meal plan for this client.
+
 CLIENT:
 - Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
 - Activity: ${d.activity} | Goal: ${d.goal} | Macros: ${d.macro}
 - Household: ${d.household} person(s) | Days: ${d.days} | Budget: ${d.budget || '$150'}/wk
 
 MEAL STRUCTURE: ${mealStructure}
+FIRST MEAL LABEL EACH DAY: ${firstMealLabel} — do not use any other label before this one
 BIGGEST MEAL: ${d.biggestMeal} — highest calories daily, min 200 cal above next meal
 PROTEINS: ${d.proteins || 'No preference'}
 EQUIPMENT: ${d.equipment || 'Standard kitchen'}
@@ -358,6 +347,18 @@ HEALTH: ${d.healthContext || 'None'}
 NOTES: ${d.notes || 'None'}
 
 Scale all quantities for ${d.household} person(s). Macros are for the full household serving.
+
+CALORIE & MACRO TARGETS
+Daily calories: ${goalCalories} cal
+Protein: ${protein}g | Carbs: ${carbs}g | Fat: ${fat}g
+
+Use this exact format for every day:
+
+${mealDayTemplate}
+
+Write Day 1 through Day ${d.days} in full. Do not skip any day. Do not jump to the grocery list until all ${d.days} days are fully written.
+
+After Day ${d.days} is complete, write:
 
 ═══════════════════════════════════════
 WEEKLY GROCERY LIST
@@ -378,7 +379,7 @@ PANTRY & DRY GOODS:
 FROZEN:
 • [item] — [total]
 
-ESTIMATED TOTAL: $XX–$XX
+ESTIMATED TOTAL: $XX-$XX
 (Budget: ${d.budget || '$150'} | ${d.household} person(s), ${d.days} days)
 
 ═══════════════════════════════════════
@@ -392,27 +393,7 @@ MEAL PREP TIPS
 
 Only these meal labels allowed: ${allowedLabels}. ${has2Meals ? 'Never write BREAKFAST.' : ''} Plain text only.`;
 
-  // Deep prefill: header + complete macro section + Day 1 opener + first meal label
-  // Model is now mid-meal on Day 1 — it cannot jump to grocery list from here
-  const prefill =
-`WEEKLY MEAL PLAN FOR ${(d.name || 'CLIENT').toUpperCase()}
-Generated: ${today}
-═══════════════════════════════════════
-
-CALORIE & MACRO TARGETS
-Daily calories: ${goalCalories} cal
-Protein: ${protein}g | Carbs: ${carbs}g | Fat: ${fat}g
-Strategy note: Targeting a ${Math.abs(goalCalories - tdee)} calorie ${goalCalories < tdee ? 'deficit' : 'surplus'} from estimated TDEE of ${tdee} to support ${d.goal.toLowerCase()}.
-
-═══════════════════════════════════════
-${d.days}-DAY MEAL PLAN
-═══════════════════════════════════════
-
-DAY 1 — MONDAY
-
-${firstMealLabel}:`;
-
-  return { systemPrompt, userPrompt, prefill };
+  return { systemPrompt, userPrompt };
 }
 
 const PORT = process.env.PORT || 3000;
