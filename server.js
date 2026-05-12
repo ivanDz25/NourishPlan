@@ -204,7 +204,7 @@ function buildPrompt(d) {
     'RULES YOU NEVER BREAK:\n\n' +
     '1. MEAL STRUCTURE: ' + mealStructureInstruction + '\n' +
     '   CRITICAL: ' + forbiddenNote + '\n' +
-    (hasSnack ? '   SNACK must appear exactly once per day. Never label it BREAKFAST.\n' : '') +
+    (hasSnack ? '   SNACK is an afternoon or evening snack eaten AFTER the main meals. It is never a morning meal. Never label it BREAKFAST.\n' : '') +
     '\n2. MEAL COUNT: Every day has exactly ' + labels.length + ' section(s): ' + allowedLabels + '. Never add or remove sections.\n' +
     '\n3. FAVORITE MEAL: The client selected "' + favoriteMeal + '" as their favorite meal. Make it the most satisfying and calorie-rich meal (~' + favCals + ' cal). Other meals target ~' + otherCals + ' cal each.' + (hasSnack ? ' SNACK targets exactly 200 calories.' : '') + '\n' +
     '\n4. COMPLETE ALL DAYS: Write all ' + d.days + ' days before the grocery list.\n' +
@@ -242,7 +242,20 @@ function buildPrompt(d) {
     'Protein: ' + protein + 'g | Carbs: ' + carbs + 'g | Fat: ' + fat + 'g\n' +
     'Strategy: ' + calDiff + ' calorie ' + calDirection + ' from TDEE of ' + tdee + ' to support ' + goalLower + '.\n\n' +
     'Use this exact format for every day -- no deviations:\n\n' +
-    mealDayTemplate + '\n\n' +
+mealDayTemplate + '\n\n' +
+'CONCRETE EXAMPLE (follow this structure exactly):\n\n' +
+'DAY 1 - MONDAY\n\n' +
+'MEAL 1: Scrambled Eggs with Turkey Sausage\n' +
+'Ingredients:\n- Ground turkey sausage - 1.5 lbs\n- Eggs - 8 large\n' +
+'Instructions:\n1. Cook sausage. 2. Scramble eggs.\n' +
+'Macros: 836 cal | 80g protein | 10g carbs | 38g fat\nPrep time: 20 min\n\n' +
+'MEAL 2: Slow Cooker Beef Stew\n' +
+'Ingredients:\n- Beef chuck - 2.5 lbs\n' +
+'Instructions:\n1. Sear beef. 2. Add to slow cooker.\n' +
+'Macros: 1022 cal | 105g protein | 20g carbs | 18g fat\nPrep time: 25 min\n\n' +
+'SNACK: Hard Boiled Eggs and String Cheese\n' +
+'Ingredients:\n- Hard boiled eggs - 4\n- String cheese sticks - 4\n' +
+'Macros: 200 cal | 22g protein | 2g carbs | 12g fat\n\n' +
     'Write Day 1 through Day ' + d.days + ' completely. Do not skip any day. Do not write the grocery list until all ' + d.days + ' days are done.\n\n' +
     'After all days are written:\n\n' +
     '===================================\n' +
