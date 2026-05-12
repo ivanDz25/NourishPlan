@@ -95,9 +95,11 @@ function buildEmailHTML(clientData, planText) {
   const formatted = escaped
     .replace(/═+/g, '<hr style="border:1px solid #DDD8CC;margin:16px 0">')
     .replace(/─+/g, '<hr style="border:0.5px solid #EEE;margin:8px 0">')
-    .replace(/^(DAY \d+ —.+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
-    .replace(/^(CALORIE & MACRO TARGETS|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
-      '<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin:20px 0 8px">$1</h2>')
+.replace(/^(DAY \d+ —.+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
+.replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5)$/gm,
+  '<h3 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#3D5A3E;margin:16px 0 4px">$1</h3>')
+.replace(/^(CALORIE & MACRO TARGETS|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
+  '<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin:20px 0 8px">$1</h2>')
     .replace(/\n/g, '<br>');
 
   return `<!DOCTYPE html>
