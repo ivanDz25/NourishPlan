@@ -48,6 +48,10 @@ app.post('/generate', async (req, res) => {
       .replace(/^>\s+/gm, '')
       .replace(/`{1,3}[^`]*`{1,3}/g, '')
       .replace(/^\s*[-*]\s+/gm, '- ');
+    
+    if ((clientData.meals || '').toLowerCase().trim() === '2 meals + snacks') {
+      text = text.replace(/^DINNER:/gm, 'SNACK:').replace(/^DINNER$/gm, 'SNACK');
+    }
 
     if (clientData.email && process.env.RESEND_API_KEY) {
       sendEmail(clientData, text).catch(err => console.error('Email error:', err));
