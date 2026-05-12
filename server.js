@@ -29,7 +29,7 @@ console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 mea
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 20000,
         system: systemPrompt,
         messages: [
@@ -177,14 +177,14 @@ function buildPrompt(d) {
   else if (dinnerOnly)            allowedLabels = 'DINNER';
   else                            allowedLabels = 'BREAKFAST, LUNCH, DINNER';
 
-  const firstMealLabel = has2Meals ? 'LUNCH' : dinnerOnly ? 'DINNER' : 'BREAKFAST';
+  const firstMealLabel = has2Meals ? 'BREAKFAST' : dinnerOnly ? 'DINNER';
 
   let mealDayTemplate;
   if (has2Meals && hasSnack) {
     mealDayTemplate =
 `DAY [number] — [DAY NAME]
 
-LUNCH: [Meal Name]
+BREAKFAST: [Meal Name]
 Ingredients:
 - [ingredient] — [quantity for ${d.household} person(s)]
 Instructions:
@@ -212,7 +212,7 @@ Prep time: [X] min`;
     mealDayTemplate =
 `DAY [number] — [DAY NAME]
 
-LUNCH: [Meal Name]
+BREAKFAST: [Meal Name]
 Ingredients:
 - [ingredient] — [quantity for ${d.household} person(s)]
 Instructions:
@@ -308,9 +308,9 @@ Prep time: [X] min`;
 ABSOLUTE CONSTRAINTS:
 
 1. ALLOWED MEAL LABELS ONLY: ${allowedLabels}
-   ${has2Meals ? 'BREAKFAST IS FORBIDDEN. Every day starts with LUNCH.' : ''}${dinnerOnly ? 'DINNER only each day.' : ''}
+   ${has2Meals ? 'Every day starts with BREAKFAST.' : ''}${dinnerOnly ? 'DINNER only each day.' : ''}
 
-2. COMPLETE ALL DAYS: Write every meal for every single day before the grocery list. The plan has ${d.days} days. All ${d.days} must be written in full. Never skip ahead.
+2. COMPLETE ALL DAYS: Write every meal, ingredient list, and cooking instructions for every single day before the weekly grocery list. The plan has ${d.days} days. All ${d.days} must be written in full. Never skip ahead.
 
 3. BIGGEST MEAL: ${d.biggestMeal} must have the highest calories every day — at least 200 cal above next highest.
 
@@ -359,15 +359,6 @@ HEALTH: ${d.healthContext || 'None'}
 NOTES: ${d.notes || 'None'}
 
 Scale all quantities for ${d.household} person(s). Macros are for the full household serving.
-
-Continue the plan from where it left off. The header and macro targets are already written.
-Now write all ${d.days} days of meals using this exact per-day format:
-
-${mealDayTemplate}
-
-Write Day 1 through Day ${d.days} completely. Do not skip any day. Do not jump to the grocery list until Day ${d.days} is fully written.
-
-After Day ${d.days} is complete, write the grocery list and meal prep tips.
 
 ═══════════════════════════════════════
 WEEKLY GROCERY LIST
