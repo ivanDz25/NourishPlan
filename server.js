@@ -180,7 +180,8 @@ function buildPrompt(d) {
   const mealDayTemplate = `DAY [number] — [DAY NAME]
 
 ${labels.map(label => isSnack(label)
-    ? `${label}: [Snack Name — simple, no cooking, ~200 cal]
+    `SNACK: [Snack Name — simple, no cooking, ~200 cal]
+IMPORTANT: This section header must be the word SNACK. Never write BREAKFAST here.`
 Ingredients:
 - [ingredient] — [quantity]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`
