@@ -78,11 +78,9 @@ input[type=range]{flex:1;accent-color:var(--moss)}
 .mp-lbl{font-size:11px;color:var(--moss);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em}
 .strategy-note{font-size:13px;color:var(--muted);line-height:1.6;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)}
 .day-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:12px;box-shadow:var(--card-shadow)}
-document.getElementById('plan-output').innerHTML=parsePlan(plan);
-.meal-name{font-size:14px;font-weight:500;color:var(--bark);margin:1.25rem 0 6px}
-.meal-type-label{font-size:22px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--moss);margin:1.25rem 0 2px}
+.day-header{font-family:'Instrument Serif',serif;font-size:18px;font-weight:600;color:var(--bark);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}
+.meal-type-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--moss);margin:1.25rem 0 4px}
 .meal-title{font-size:15px;font-weight:600;color:var(--bark);margin-bottom:6px}
-.meal-name:first-of-type{margin-top:0}
 .meal-divider{border:none;border-top:1px solid var(--border);margin:1rem 0 0}
 .ingredients-label{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px}
 .ingredients-list{list-style:none;margin:0 0 8px;padding:0}
@@ -216,11 +214,11 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         </div>
         <div class="field"><label>Meals per day</label>
           <select id="meals">
-            <option>3 meals/day</option>
-            <option>2 meals/day</option>
-            <option>2 meals + snacks</option>
-            <option>3 meals + snacks</option>
-            <option>Dinner only</option>
+            <option value="3 meals/day">3 meals/day</option>
+            <option value="2 meals/day">2 meals/day</option>
+            <option value="2 meals + snacks">2 meals + snacks</option>
+            <option value="3 meals + snacks">3 meals + snacks</option>
+            <option value="dinner only">Dinner only</option>
           </select>
         </div>
         <div class="field"><label>Days per week</label>
@@ -342,11 +340,11 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
       <div class="grid2">
         <div class="field"><label>Foods to avoid (preference, not allergy)</label><textarea id="dislikes" placeholder="e.g. mushrooms, cilantro, Brussels sprouts"></textarea></div>
         <div class="field"><label>Anything else we should know?</label><textarea id="notes" placeholder="e.g. very busy Mondays, already have rice and eggs, cooking for picky kids"></textarea></div>
+      </div>
       <div class="field">
-  <label>Health conditions or symptoms affecting your diet</label>
-  <div class="hint">Optional — e.g. inflammation, kidney stones, digestive issues, nerve pain, high blood pressure.</div>
-  <textarea id="healthContext" placeholder="e.g. dealing with inflammation and right-side abdominal pain, possibly gallbladder related. Want anti-inflammatory, low-fat meals." style="min-height:90px"></textarea>
-</div>
+        <label>Health conditions or symptoms affecting your diet</label>
+        <div class="hint">Optional — e.g. inflammation, kidney stones, digestive issues, nerve pain, high blood pressure.</div>
+        <textarea id="healthContext" placeholder="e.g. dealing with inflammation and right-side abdominal pain, possibly gallbladder related. Want anti-inflammatory, low-fat meals." style="min-height:90px"></textarea>
       </div>
     </div>
     <div class="submit-wrap">
@@ -368,7 +366,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
     <h2>Your Weekly Meal Plan</h2>
     <div class="results-actions">
       <button class="action-btn" id="copyBtn" onclick="copyPlan()">Copy text</button>
-      <button class="action-btn" onclick="window.print()" style="background:var(--moss);color:white;border-color:var(--moss)">⬇ Save as PDF</button>
+      <button class="action-btn" onclick="window.print()" style="background:var(--moss);color:white;border-color:var(--moss)">Save as PDF</button>
       <button class="action-btn" onclick="startOver()">New plan</button>
     </div>
   </div>
@@ -424,6 +422,8 @@ function showLoading(){
   LOADING_MSGS.forEach(function(msg,i){var el=document.createElement('div');el.className='loading-step';el.textContent='-> '+msg;el.style.animationDelay=(i*0.6)+'s';c.appendChild(el)});
 }
 
+var MEAL_LABELS=['BREAKFAST','LUNCH','DINNER','SNACK','MEAL 1','MEAL 2','MEAL 3','MEAL 4','MEAL 5'];
+
 function parsePlan(text){
   var dayMealCount=0;
   var lines=text.split('\n');
@@ -433,18 +433,12 @@ function parsePlan(text){
   var GSECTIONS=['PRODUCE','PROTEIN & MEAT','PROTEIN AND MEAT','DAIRY & EGGS','DAIRY AND EGGS','PANTRY & DRY GOODS','PANTRY AND DRY GOODS','FROZEN'];
   for(var i=0;i<lines.length;i++){
     var line=lines[i].trim();
-if(!line||/^[=\-─═]{3,}$/.test(line))continue;
+    if(!line||/^[=\-]{3,}$/.test(line))continue;
     var UP=line.toUpperCase();
     if(/^CALORIE.*MACRO/i.test(line)){
       if(inDay){html+='</div>';inDay=false}
       inMacro=true;inGrocery=false;inTips=false;
       html+='<div class="plan-section-label">Calorie & Macro Targets</div><div class="macro-card">';
-      continue;
-    }
-    if(/\d+-DAY MEAL PLAN|DAY MEAL PLAN/i.test(line)){
-      if(inMacro){html+='</div>';inMacro=false}
-      if(inDay){html+='</div>';inDay=false}
-      html+='<div class="plan-section-label">'+line+'</div>';
       continue;
     }
     if(/WEEKLY GROCERY LIST|^GROCERY LIST$/i.test(UP)){
@@ -476,8 +470,8 @@ if(!line||/^[=\-─═]{3,}$/.test(line))continue;
           html+='<div class="macro-pill"><div class="mp-val">'+val+'</div><div class="mp-lbl">'+lbl+'</div></div>';
         });
         html+='</div>';
-      } else if(/^strategy note/i.test(line)){
-        html+='<div class="strategy-note">'+line.replace(/^strategy note:\s*/i,'').trim()+'</div></div>';
+      } else if(/^strategy/i.test(line)){
+        html+='<div class="strategy-note">'+line.replace(/^strategy[^:]*:\s*/i,'').trim()+'</div></div>';
         inMacro=false;
       }
       continue;
@@ -491,17 +485,28 @@ if(!line||/^[=\-─═]{3,}$/.test(line))continue;
       continue;
     }
     if(inDay){
-      var isMealLabel=/^(BREAKFAST|LUNCH|DINNER|SNACKS?|MEAL [1-5])\s*:/i.test(line);
-      var isDishName=!inIngredients&&!inInstructions&&/^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT)/i.test(line);
-      if(isMealLabel||isDishName){
+      // Check if line is a meal label (BREAKFAST, LUNCH, DINNER, SNACK, MEAL 1, etc.)
+      var cleanLine=line.replace(/\s*:.*$/,'').trim().toUpperCase();
+      var isMealLabel=MEAL_LABELS.indexOf(cleanLine)>=0;
+      var dishName='';
+      if(isMealLabel){
+        // Extract dish name from same line if format is "LABEL: Dish Name"
+        var colonIdx=line.indexOf(':');
+        if(colonIdx>=0){dishName=line.substring(colonIdx+1).trim()}
         if(inIngredients){html+='</ul>';inIngredients=false}
         if(inInstructions){html+='</ol>';inInstructions=false}
-        var typeLabel=line.replace(/\s*:.*$/,'').trim();
-        dayMealCount++;
-.replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5)$/gm, ...)
-        if(!dishName)dishName=line;
         if(dayMealCount>1)html+='<hr class="meal-divider">';
-        html+='<div class="meal-type-label">'+typeLabel+'</div><div class="meal-title">'+dishName+'</div>';
+        dayMealCount++;
+        html+='<div class="meal-type-label">'+cleanLine+'</div>';
+        if(dishName)html+='<div class="meal-title">'+dishName+'</div>';
+        continue;
+      }
+      // Check if line looks like a dish name (title case, no punctuation patterns of ingredients)
+      var isDishName=!inIngredients&&!inInstructions&&dayMealCount>0&&/^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT|IMPORTANT)/i.test(line);
+      if(isDishName){
+        if(inIngredients){html+='</ul>';inIngredients=false}
+        if(inInstructions){html+='</ol>';inInstructions=false}
+        html+='<div class="meal-title">'+line+'</div>';
         continue;
       }
     }
@@ -637,7 +642,8 @@ async function handleSubmit(e){
     restrictions:restrictions,cuisine:cuisine,
     skill:document.getElementById('skill').value,
     dislikes:document.getElementById('dislikes').value,
-    notes:document.getElementById('notes').value, healthContext:document.getElementById('healthContext').value
+    notes:document.getElementById('notes').value,
+    healthContext:document.getElementById('healthContext').value
   };
   showLoading();
   try{
