@@ -51,10 +51,12 @@ app.post('/generate', async (req, res) => {
     
     if ((clientData.meals || '').toLowerCase().trim() === '2 meals + snacks') {
       text = text.replace(/^DINNER:/gm, 'SNACK:').replace(/^DINNER$/gm, 'SNACK');
+      text = text.replace(/^BREAKFAST:/gm, 'MEAL 1:').replace(/^BREAKFAST$/gm, 'MEAL 1');
+      text = text.replace(/^LUNCH:/gm, 'MEAL 2:').replace(/^LUNCH$/gm, 'MEAL 2');
     }
-
-    if (clientData.email && process.env.RESEND_API_KEY) {
-      sendEmail(clientData, text).catch(err => console.error('Email error:', err));
+    if ((clientData.meals || '').toLowerCase().trim() === '2 meals/day') {
+      text = text.replace(/^BREAKFAST:/gm, 'MEAL 1:').replace(/^BREAKFAST$/gm, 'MEAL 1');
+      text = text.replace(/^DINNER:/gm, 'MEAL 2:').replace(/^DINNER$/gm, 'MEAL 2');
     }
 
     res.json({ plan: text });
