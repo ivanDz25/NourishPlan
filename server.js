@@ -229,7 +229,13 @@ RULES YOU NEVER BREAK:
 
 6. BANNED INGREDIENTS: ${d.hardAllergies || 'None'} — never appear in any meal or the grocery list.`;
 
-  const userPrompt = `Generate a complete ${d.days}-day meal plan for this client.
+ const userPrompt = `CRITICAL FORMATTING RULE: You must use ONLY these section headers each day: ${allowedLabels}. 
+The word BREAKFAST is completely forbidden in this meal plan. Do not write it anywhere.
+The word LUNCH is completely forbidden in this meal plan. Do not write it anywhere.  
+The word DINNER is completely forbidden in this meal plan. Do not write it anywhere.
+If you write BREAKFAST, LUNCH, or DINNER anywhere, the output is invalid and must be rejected.
+
+Generate a complete ${d.days}-day meal plan...`
 
 CLIENT:
 - Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
