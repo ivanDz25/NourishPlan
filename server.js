@@ -177,8 +177,8 @@ function buildPrompt(d) {
   else if (dinnerOnly)            allowedLabels = 'DINNER';
   else                            allowedLabels = 'BREAKFAST, LUNCH, DINNER';
 
-  const firstMealLabel = has2Meals ? 'BREAKFAST' : dinnerOnly ? 'DINNER';
-
+const firstMealLabel = has2Meals ? 'LUNCH' : dinnerOnly ? 'DINNER' : 'BREAKFAST';
+  
   let mealDayTemplate;
   if (has2Meals && hasSnack) {
     mealDayTemplate =
