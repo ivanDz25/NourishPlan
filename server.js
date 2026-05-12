@@ -29,12 +29,11 @@ console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 mea
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 20000,
         system: systemPrompt,
         messages: [
           { role: 'user', content: userPrompt },
-          { role: 'assistant', content: prefill }
         ]
       })
     });
@@ -339,8 +338,8 @@ ABSOLUTE CONSTRAINTS:
   const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
 
   const userPrompt =
-`Generate a complete ${d.days}-day meal plan for this client.
-
+STARTING NOW: Write the complete meal plan. First line of your response must be: "${firstMealLabel}: [meal name]" — nothing before it.
+    
 CLIENT:
 - Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
 - Activity: ${d.activity} | Goal: ${d.goal} | Macros: ${d.macro}
