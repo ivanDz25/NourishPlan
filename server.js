@@ -152,146 +152,37 @@ function buildEmailHTML(clientData, planText) {
 </html>`;
 }
 
+const mealLabelMap = {
+  '2 meals + snacks': ['MEAL 1', 'MEAL 2', 'SNACK'],
+  '3 meals': ['BREAKFAST', 'LUNCH', 'DINNER'],
+  '3 meals + snacks': ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'],
+  '4-5 smaller meals': ['MEAL 1', 'MEAL 2', 'MEAL 3', 'MEAL 4', 'MEAL 5']
+};
+
 function buildPrompt(d) {
-  const mealsLower = (d.meals || '').toLowerCase();
-  const has2Meals  = mealsLower.includes('2 meal');
-  const hasSnack   = mealsLower.includes('snack');
-  const has3Meals  = mealsLower.includes('3 meal');
-  const dinnerOnly = mealsLower.includes('dinner only');
-
-  let mealStructure;
-  if (has2Meals && hasSnack)      mealStructure = 'LUNCH and DINNER plus one SNACK';
-  else if (has2Meals)             mealStructure = 'LUNCH and DINNER only';
-  else if (has3Meals && hasSnack) mealStructure = 'BREAKFAST, LUNCH, and DINNER plus one SNACK';
-  else if (has3Meals)             mealStructure = 'BREAKFAST, LUNCH, and DINNER';
-  else if (dinnerOnly)            mealStructure = 'DINNER only';
-  else                            mealStructure = d.meals;
-
-  let allowedLabels;
-  if (has2Meals && hasSnack)      allowedLabels = 'LUNCH, DINNER, SNACK';
-  else if (has2Meals)             allowedLabels = 'LUNCH, DINNER';
-  else if (has3Meals && hasSnack) allowedLabels = 'BREAKFAST, LUNCH, DINNER, SNACK';
-  else if (has3Meals)             allowedLabels = 'BREAKFAST, LUNCH, DINNER';
-  else if (dinnerOnly)            allowedLabels = 'DINNER';
-  else                            allowedLabels = 'BREAKFAST, LUNCH, DINNER';
-
+  const labels = mealLabelMap[d.meals] || ['MEAL 1', 'MEAL 2', 'MEAL 3'];
+  const allowedLabels = labels.join(', ');
+  const hasSnack = labels.includes('SNACK');
+  const mealCount = labels.filter(l => l !== 'SNACK').length;
+  const mealStructureInstruction = `Each day must contain EXACTLY these meal sections in this order: ${allowedLabels}. Use ONLY these labels. Do not add, rename, or reorder them.`;
   const favoriteMeal = (d.biggestMeal || 'Dinner (evening)');
 
-  let mealDayTemplate;
-  if (has2Meals && hasSnack) {
-    mealDayTemplate =
-`DAY [number] — [DAY NAME]
+  const isSnack = (label) => label === 'SNACK';
+  const mealDayTemplate = `DAY [number] — [DAY NAME]
 
-LUNCH: [Meal Name]
+${labels.map(label => isSnack(label)
+  ? `${label}: [Snack Name — simple, no cooking, ~200 cal]
+Ingredients:
+- [ingredient] — [quantity]
+Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`
+  : `${label}: [Meal Name]
 Ingredients:
 - [ingredient] — [quantity for ${d.household} person(s)]
 Instructions:
 1. [Step]
 Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-DINNER: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-SNACK: [Snack Name — simple, no cooking, ~200 cal]
-Ingredients:
-- [ingredient] — [quantity]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`;
-  } else if (has2Meals) {
-    mealDayTemplate =
-`DAY [number] — [DAY NAME]
-
-LUNCH: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity for ${d.household} person(s)]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-DINNER: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min`;
-  } else if (has3Meals && hasSnack) {
-    mealDayTemplate =
-`DAY [number] — [DAY NAME]
-
-BREAKFAST: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity for ${d.household} person(s)]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-LUNCH: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-DINNER: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-SNACK: [Snack Name — simple, no cooking, ~200 cal]
-Ingredients:
-- [ingredient] — [quantity]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`;
-  } else if (dinnerOnly) {
-    mealDayTemplate =
-`DAY [number] — [DAY NAME]
-
-DINNER: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity for ${d.household} person(s)]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min`;
-  } else {
-    mealDayTemplate =
-`DAY [number] — [DAY NAME]
-
-BREAKFAST: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity for ${d.household} person(s)]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-LUNCH: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min
-
-DINNER: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min`;
-  }
+Prep time: [X] min`
+).join('\n')}`;
 
   // Calorie math
   const weight = parseFloat(d.weight) || 180;
@@ -311,7 +202,6 @@ Prep time: [X] min`;
   const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
   const snackCals = hasSnack ? 200 : 0;
   const mealCals = goalCalories - snackCals;
-  const mealCount = has2Meals ? 2 : dinnerOnly ? 1 : 3;
   const favCals = Math.round(mealCals * 0.55);
   const otherCals = mealCount > 1 ? Math.round((mealCals - favCals) / (mealCount - 1)) : 0;
 
@@ -320,12 +210,10 @@ Prep time: [X] min`;
 
 RULES YOU NEVER BREAK:
 
-1. MEAL LABELS: Only use these exact labels each day: ${allowedLabels}
-   ${has2Meals ? 'BREAKFAST does not exist in this plan. Never write it. The first meal each day is LUNCH.' : ''}
-   ${dinnerOnly ? 'Only DINNER appears each day.' : ''}
-   ${hasSnack ? 'SNACK is always simple, requires no cooking, and is always approximately 200 calories.' : ''}
+1. MEAL STRUCTURE: ${mealStructureInstruction}
+${hasSnack ? '   SNACK is always simple, requires no cooking, and is always approximately 200 calories.' : ''}
 
-2. MEAL COUNT: Every day has exactly this structure: ${mealStructure}. Never add or remove meals.
+2. MEAL COUNT: Every day has exactly ${labels.length} section(s): ${allowedLabels}. Never add or remove sections.
 
 3. FAVORITE MEAL: The client selected "${favoriteMeal}" as their favorite meal. Make it the most generous, satisfying, and calorie-rich meal of the day. Target approximately ${favCals} calories for this meal. Other meals target approximately ${otherCals} calories each.${hasSnack ? ' SNACK targets exactly 200 calories.' : ''}
 
@@ -342,7 +230,7 @@ CLIENT:
 - Activity: ${d.activity} | Goal: ${d.goal} | Macros: ${d.macro}
 - Household: ${d.household} person(s) | Days: ${d.days} | Budget: ${d.budget || '$150'}/wk
 
-DAILY STRUCTURE: ${mealStructure}
+DAILY STRUCTURE: ${allowedLabels}
 FAVORITE MEAL: ${favoriteMeal} — make this the most satisfying and calorie-rich meal (~${favCals} cal)
 ${mealCount > 1 ? `OTHER MEALS: approximately ${otherCals} calories each` : ''}
 ${hasSnack ? 'SNACK: always ~200 calories, simple, no cooking required' : ''}
@@ -377,19 +265,19 @@ WEEKLY GROCERY LIST
 ═══════════════════════════════════════
 
 PRODUCE:
-• [item] — [total quantity for the week]
+- [item] — [total quantity for the week]
 
 PROTEIN & MEAT:
-• [item] — [total]
+- [item] — [total]
 
 DAIRY & EGGS:
-• [item] — [total]
+- [item] — [total]
 
 PANTRY & DRY GOODS:
-• [item] — [total]
+- [item] — [total]
 
 FROZEN:
-• [item] — [total]
+- [item] — [total]
 
 ESTIMATED TOTAL: $XX-$XX
 (Budget: ${d.budget || '$150'} | ${d.household} person(s), ${d.days} days)
@@ -403,7 +291,7 @@ MEAL PREP TIPS
 4. [Budget tip]
 5. [Macro tracking tip based on their tracking level]
 
-Allowed meal labels: ${allowedLabels} only. ${has2Meals ? 'Never write BREAKFAST.' : ''} Plain text only. No markdown.`;
+Allowed meal labels: ${allowedLabels} only. Plain text only. No markdown.`;
 
   return { systemPrompt, userPrompt };
 }
