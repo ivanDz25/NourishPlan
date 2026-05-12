@@ -16,6 +16,9 @@ app.post('/generate', async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
 
   const { systemPrompt, userPrompt, prefill } = buildPrompt(clientData);
+  console.log('PREFILL FIRST 100 chars:', prefill.substring(0, 100));
+console.log('MEALS VALUE:', clientData.meals);
+console.log('HAS2MEALS:', (clientData.meals || '').toLowerCase().includes('2 meal'));
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -300,7 +303,7 @@ Prep time: [X] min`;
   }
 
   const systemPrompt =
-`You are an elite registered dietitian generating structured meal plans.
+`You are an elite registered dietitian generating structured meal plans for high performing acheivers like world renowned athletes and entrepreneurs.
 
 ABSOLUTE CONSTRAINTS:
 
