@@ -162,6 +162,9 @@ const mealLabelMap = {
 };
 
 function buildPrompt(d) {
+ console.log('d.meals raw value:', JSON.stringify(d.meals));
+ console.log('labels resolved:', labels);
+ console.log('hasSnack:', hasSnack);
   const labels = mealLabelMap[d.meals] || ['MEAL 1', 'MEAL 2', 'MEAL 3'];
   const allowedLabels = labels.join(', ');
   const hasSnack = labels.includes('SNACK');
