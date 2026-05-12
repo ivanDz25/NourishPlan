@@ -179,10 +179,26 @@ function buildPrompt(d) {
   const weight = parseFloat(d.weight) || 180;
   const age = parseFloat(d.age) || 30;
   const isMale = (d.sex || '').toLowerCase().includes('male');
+  function parseHeightToCm(h) {
+      h = (h || '').toString().trim();
+      var ftIn = h.match(/(\d+)['\s](\d+)/);
+      if (ftIn) return Math.round((parseInt(ftIn[1]) * 12 + parseInt(ftIn[2])) * 2.54);
+      var ftOnly = h.match(/^(\d+)'?$/);
+      if (ftOnly && parseInt(ftOnly[1]) < 8) return Math.round(parseInt(ftOnly[1]) * 30.48);
+      var cm = parseFloat(h);
+      if (cm > 100) return Math.round(cm);
+      return 170;
+    }
+    const heightCm = parseHeightToCm(d.height);
   const bmr = isMale
-    ? Math.round(10 * weight * 0.453592 + 6.25 * 170 - 5 * age + 5)
-    : Math.round(10 * weight * 0.453592 + 6.25 * 170 - 5 * age - 161);
-  const tdee = Math.round(bmr * 1.2);
+    ? Math.round(10 * weight * 0.453592 + 6.25 * heightCm - 5 * age + 5)
+    : Math.round(10 * weight * 0.453592 + 6.25 * heightCm - 5 * age - 161);
+  const activityMultiplier = (d.activity || '').toLowerCase().includes('lightly') ? 1.375
+      : (d.activity || '').toLowerCase().includes('moderately') ? 1.55
+      : (d.activity || '').toLowerCase().includes('very') ? 1.725
+      : (d.activity || '').toLowerCase().includes('athlete') ? 1.9
+      : 1.2;
+    const tdee = Math.round(bmr * activityMultiplier);
   const goalCalories = d.goal && d.goal.toLowerCase().includes('lose')
     ? tdee - 500
     : d.goal && d.goal.toLowerCase().includes('bulk')
