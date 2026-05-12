@@ -29,9 +29,7 @@ app.post('/generate', async (req, res) => {
         model: 'claude-sonnet-4-6',
         max_tokens: 20000,
         system: systemPrompt,
-        messages: [
-          { role: 'user', content: userPrompt }
-        ]
+        messages: [{ role: 'user', content: userPrompt }]
       })
     });
 
@@ -49,7 +47,7 @@ app.post('/generate', async (req, res) => {
       .replace(/^#{1,6}\s+/gm, '')
       .replace(/^>\s+/gm, '')
       .replace(/`{1,3}[^`]*`{1,3}/g, '')
-      .replace(/^\s*[-*]\s+/gm, '• ');
+      .replace(/^\s*[-*]\s+/gm, '- ');
 
     if (clientData.email && process.env.RESEND_API_KEY) {
       sendEmail(clientData, text).catch(err => console.error('Email error:', err));
@@ -72,16 +70,16 @@ async function sendEmail(clientData, planText) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${resendKey}`
+      'Authorization': 'Bearer ' + resendKey
     },
     body: JSON.stringify({
-      from: `NourishPlan <${fromEmail}>`,
+      from: 'NourishPlan <' + fromEmail + '>',
       to: [clientData.email],
-      subject: `Your Weekly Meal Plan is Ready, ${clientData.name} 🥗`,
+      subject: 'Your Weekly Meal Plan is Ready, ' + clientData.name + '!',
       html: htmlBody
     })
   });
-  console.log(`Email sent to ${clientData.email}`);
+  console.log('Email sent to ' + clientData.email);
 }
 
 function buildEmailHTML(clientData, planText) {
@@ -91,108 +89,85 @@ function buildEmailHTML(clientData, planText) {
     .replace(/>/g, '&gt;');
 
   const formatted = escaped
-    .replace(/═+/g, '<hr style="border:1px solid #DDD8CC;margin:16px 0">')
-    .replace(/─+/g, '<hr style="border:0.5px solid #EEE;margin:8px 0">')
-    .replace(/^(DAY \d+ —.+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
-    .replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5)$/gm,
+    .replace(/={3,}/g, '<hr style="border:1px solid #DDD8CC;margin:16px 0">')
+    .replace(/-{3,}/g, '<hr style="border:0.5px solid #EEE;margin:8px 0">')
+    .replace(/^(DAY \d+ - .+)$/gm, '<h3 style="color:#3D5A3E;font-size:15px;margin:20px 0 4px">$1</h3>')
+    .replace(/^(BREAKFAST|LUNCH|DINNER|SNACK|MEAL 1|MEAL 2|MEAL 3|MEAL 4|MEAL 5):?$/gm,
       '<h3 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#3D5A3E;margin:16px 0 4px">$1</h3>')
     .replace(/^(CALORIE & MACRO TARGETS|WEEKLY GROCERY LIST|MEAL PREP TIPS)$/gm,
       '<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin:20px 0 8px">$1</h2>')
     .replace(/\n/g, '<br>');
 
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F7F4EE;font-family:'Helvetica Neue',Arial,sans-serif">
-  <div style="max-width:640px;margin:0 auto;padding:32px 16px">
-    <div style="text-align:center;margin-bottom:32px">
-      <div style="font-size:24px;font-weight:600;color:#2C2416">Nourish<span style="color:#3D5A3E">Plan</span></div>
-      <div style="font-size:13px;color:#7A7060;margin-top:4px">Your personalized weekly meal plan</div>
-    </div>
-    <div style="background:#3D5A3E;border-radius:12px;padding:28px;text-align:center;margin-bottom:24px">
-      <div style="color:#C8DFC8;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">Ready to cook</div>
-      <div style="color:white;font-size:26px;font-weight:600;margin-bottom:4px">Hi ${clientData.name} 👋</div>
-      <div style="color:#A8CCA8;font-size:14px">Your ${clientData.goal} meal plan is ready.</div>
-    </div>
-    <div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:20px;margin-bottom:24px">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#7A7060;margin-bottom:12px">Your targets</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:80px;background:#F7F4EE;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#7A7060">Goal</div>
-          <div style="font-size:13px;font-weight:600;color:#2C2416;margin-top:2px">${clientData.goal}</div>
-        </div>
-        <div style="flex:1;min-width:80px;background:#F7F4EE;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#7A7060">Macros</div>
-          <div style="font-size:13px;font-weight:600;color:#2C2416;margin-top:2px">${clientData.macro.split('(')[0].trim()}</div>
-        </div>
-        <div style="flex:1;min-width:80px;background:#F7F4EE;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#7A7060">Budget</div>
-          <div style="font-size:13px;font-weight:600;color:#2C2416;margin-top:2px">${clientData.budget}/wk</div>
-        </div>
-        <div style="flex:1;min-width:80px;background:#F7F4EE;border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:11px;color:#7A7060">Household</div>
-          <div style="font-size:13px;font-weight:600;color:#2C2416;margin-top:2px">${clientData.household} person(s)</div>
-        </div>
-      </div>
-    </div>
-    <div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:24px;margin-bottom:24px;font-size:14px;line-height:1.8;color:#2C2416">
-      ${formatted}
-    </div>
-    <div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
-      <div style="font-size:15px;font-weight:600;color:#2C2416;margin-bottom:6px">Want a fresh plan every week?</div>
-      <div style="font-size:13px;color:#7A7060;margin-bottom:16px">Reply to this email and we'll set it up for you.</div>
-      <a href="https://nourishplan.onrender.com" style="display:inline-block;background:#3D5A3E;color:white;padding:12px 28px;border-radius:100px;text-decoration:none;font-size:14px;font-weight:500">Generate another plan</a>
-    </div>
-    <div style="text-align:center;font-size:12px;color:#7A7060;line-height:1.6">
-      NourishPlan · No groceries sold · No spam<br>
-      You received this because you requested a meal plan.
-    </div>
-  </div>
-</body>
-</html>`;
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>' +
+    '<body style="margin:0;padding:0;background:#F7F4EE;font-family:Arial,sans-serif">' +
+    '<div style="max-width:640px;margin:0 auto;padding:32px 16px">' +
+    '<div style="text-align:center;margin-bottom:32px">' +
+    '<div style="font-size:24px;font-weight:600;color:#2C2416">Nourish<span style="color:#3D5A3E">Plan</span></div>' +
+    '<div style="font-size:13px;color:#7A7060;margin-top:4px">Your personalized weekly meal plan</div>' +
+    '</div>' +
+    '<div style="background:#3D5A3E;border-radius:12px;padding:28px;text-align:center;margin-bottom:24px">' +
+    '<div style="color:white;font-size:26px;font-weight:600;margin-bottom:4px">Hi ' + clientData.name + '</div>' +
+    '<div style="color:#A8CCA8;font-size:14px">Your ' + clientData.goal + ' meal plan is ready.</div>' +
+    '</div>' +
+    '<div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:24px;margin-bottom:24px;font-size:14px;line-height:1.8;color:#2C2416">' +
+    formatted +
+    '</div>' +
+    '<div style="background:white;border:1px solid #DDD8CC;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">' +
+    '<div style="font-size:15px;font-weight:600;color:#2C2416;margin-bottom:6px">Want a fresh plan every week?</div>' +
+    '<div style="font-size:13px;color:#7A7060;margin-bottom:16px">Reply to this email and we will set it up for you.</div>' +
+    '<a href="https://nourishplan.onrender.com" style="display:inline-block;background:#3D5A3E;color:white;padding:12px 28px;border-radius:100px;text-decoration:none;font-size:14px;font-weight:500">Generate another plan</a>' +
+    '</div>' +
+    '<div style="text-align:center;font-size:12px;color:#7A7060;line-height:1.6">' +
+    'NourishPlan - No groceries sold - No spam<br>' +
+    'You received this because you requested a meal plan.' +
+    '</div></div></body></html>';
 }
 
 const mealLabelMap = {
   '2 meals + snacks': ['MEAL 1', 'MEAL 2', 'SNACK'],
+  '2 meals/day': ['MEAL 1', 'MEAL 2'],
   '3 meals': ['BREAKFAST', 'LUNCH', 'DINNER'],
+  '3 meals/day': ['BREAKFAST', 'LUNCH', 'DINNER'],
   '3 meals + snacks': ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'],
+  'dinner only': ['DINNER'],
   '4-5 smaller meals': ['MEAL 1', 'MEAL 2', 'MEAL 3', 'MEAL 4', 'MEAL 5']
 };
 
 function buildPrompt(d) {
-  const mealKey = Object.keys(mealLabelMap).find(k =>
-    k.toLowerCase().trim() === (d.meals || '').toLowerCase().trim()
-  );
-  const labels = mealLabelMap[mealKey] || ['MEAL 1', 'MEAL 2', 'MEAL 3'];
+  const mealKey = Object.keys(mealLabelMap).find(function(k) {
+    return k.toLowerCase().trim() === (d.meals || '').toLowerCase().trim();
+  });
+  const labels = mealLabelMap[mealKey] || ['BREAKFAST', 'LUNCH', 'DINNER'];
   const allowedLabels = labels.join(', ');
   const hasSnack = labels.includes('SNACK');
-  const mealCount = labels.filter(l => l !== 'SNACK').length;
+  const mealCount = labels.filter(function(l) { return l !== 'SNACK'; }).length;
 
   console.log('d.meals raw value:', JSON.stringify(d.meals));
   console.log('mealKey matched:', mealKey);
-  console.log('labels resolved:', labels);
+  console.log('labels resolved:', JSON.stringify(labels));
   console.log('hasSnack:', hasSnack);
 
-  const mealStructureInstruction = `Each day must contain EXACTLY these meal sections in this order: ${allowedLabels}. Use ONLY these labels. Do not add, rename, or reorder them.`;
   const favoriteMeal = (d.biggestMeal || 'Dinner (evening)');
 
-  const isSnack = (label) => label === 'SNACK';
-  const mealDayTemplate = `DAY [number] - [DAY NAME]
+  const snackBlock = 'SNACK: [Snack Name - simple, no cooking, ~200 cal]\n' +
+    'Ingredients:\n' +
+    '- [ingredient] - [quantity]\n' +
+    'Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat';
 
-${labels.map(label => isSnack(label)
-    `SNACK: [Snack Name - simple, no cooking, ~200 cal]
-IMPORTANT: This section header must be the word SNACK. Never write BREAKFAST here.`
-Ingredients:
-- [ingredient] — [quantity]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat`
-    : `${label}: [Meal Name]
-Ingredients:
-- [ingredient] — [quantity for ${d.household} person(s)]
-Instructions:
-1. [Step]
-Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat
-Prep time: [X] min`
-  ).join('\n')}`;
+  function mealBlock(label) {
+    return label + ': [Meal Name]\n' +
+      'Ingredients:\n' +
+      '- [ingredient] - [quantity for ' + d.household + ' person(s)]\n' +
+      'Instructions:\n' +
+      '1. [Step]\n' +
+      'Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat\n' +
+      'Prep time: [X] min';
+  }
+
+  const mealDayTemplate = 'DAY [number] - [DAY NAME]\n\n' +
+    labels.map(function(label) {
+      return label === 'SNACK' ? snackBlock : mealBlock(label);
+    }).join('\n\n');
 
   // Calorie math
   const weight = parseFloat(d.weight) || 180;
@@ -214,105 +189,91 @@ Prep time: [X] min`
   const mealCals = goalCalories - snackCals;
   const favCals = Math.round(mealCals * 0.55);
   const otherCals = mealCount > 1 ? Math.round((mealCals - favCals) / (mealCount - 1)) : 0;
+  const calDiff = Math.abs(goalCalories - tdee);
+  const calDirection = goalCalories < tdee ? 'deficit' : 'surplus';
+
+  const mealStructureInstruction = 'Each day must contain EXACTLY these meal sections in this order: ' + allowedLabels + '. Use ONLY these labels. Do not add, rename, or reorder them.';
+
+  const forbiddenNote = (labels.includes('BREAKFAST') ? '' : 'BREAKFAST is forbidden. ') +
+    (labels.includes('LUNCH') ? '' : 'LUNCH is forbidden. ') +
+    (labels.includes('DINNER') ? '' : 'DINNER is forbidden. ') +
+    'Never use these as section headers unless listed above.';
 
   const systemPrompt =
-`You are an elite registered dietitian generating structured meal plans.
+    'You are an elite registered dietitian generating structured meal plans.\n\n' +
+    'RULES YOU NEVER BREAK:\n\n' +
+    '1. MEAL STRUCTURE: ' + mealStructureInstruction + '\n' +
+    '   CRITICAL: ' + forbiddenNote + '\n' +
+    (hasSnack ? '   SNACK must appear exactly once per day. Never label it BREAKFAST.\n' : '') +
+    '\n2. MEAL COUNT: Every day has exactly ' + labels.length + ' section(s): ' + allowedLabels + '. Never add or remove sections.\n' +
+    '\n3. FAVORITE MEAL: The client selected "' + favoriteMeal + '" as their favorite meal. Make it the most satisfying and calorie-rich meal (~' + favCals + ' cal). Other meals target ~' + otherCals + ' cal each.' + (hasSnack ? ' SNACK targets exactly 200 calories.' : '') + '\n' +
+    '\n4. COMPLETE ALL DAYS: Write all ' + d.days + ' days before the grocery list.\n' +
+    '\n5. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers.\n' +
+    '\n6. BANNED INGREDIENTS: ' + (d.hardAllergies || 'None') + ' -- never appear anywhere.';
 
-RULES YOU NEVER BREAK:
-
-1. MEAL STRUCTURE: ${mealStructureInstruction}
-   CRITICAL: The words BREAKFAST, LUNCH, and DINNER are FORBIDDEN unless they appear in the labels above. Do not use them as section headers under any circumstances.
-   ${hasSnack ? 'The label SNACK must appear exactly once per day. Never substitute BREAKFAST for SNACK.' : ''}
-
-2. MEAL COUNT: Every day has exactly ${labels.length} section(s): ${allowedLabels}. Never add or remove sections.
-
-3. FAVORITE MEAL: The client selected "${favoriteMeal}" as their favorite meal. Make it the most generous, satisfying, and calorie-rich meal of the day. Target approximately ${favCals} calories for this meal. Other meals target approximately ${otherCals} calories each.${hasSnack ? ' SNACK targets exactly 200 calories.' : ''}
-
-4. COMPLETE ALL DAYS: Write all ${d.days} days in full before writing the grocery list. Never skip ahead.
-
-5. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers. Use bullet symbol • for lists and ═ for dividers.
-
-6. BANNED INGREDIENTS: ${d.hardAllergies || 'None'} — never appear in any meal or the grocery list.`;
+  const otherMealsLine = mealCount > 1 ? 'OTHER MEALS: approximately ' + otherCals + ' calories each' : '';
+  const snackLine = hasSnack ? 'SNACK: always ~200 calories, simple, no cooking required' : '';
+  const goalLower = (d.goal || '').toLowerCase();
 
   const userPrompt =
-`CRITICAL FORMATTING RULE: You must use ONLY these section headers each day: ${allowedLabels}.
-The words BREAKFAST, LUNCH, and DINNER are completely forbidden in this meal plan unless they appear in the allowed labels above. Do not write them anywhere as section headers.
-If you write a forbidden label anywhere, the output is invalid.
-
-Generate a complete ${d.days}-day meal plan for this client.
-
-CLIENT:
-- Name: ${d.name || 'Client'} | Age: ${d.age} | Sex: ${d.sex} | Height: ${d.height} | Weight: ${d.weight} lbs
-- Activity: ${d.activity} | Goal: ${d.goal} | Macros: ${d.macro}
-- Household: ${d.household} person(s) | Days: ${d.days} | Budget: ${d.budget || '$150'}/wk
-
-DAILY STRUCTURE: ${allowedLabels}
-FAVORITE MEAL: ${favoriteMeal} — make this the most satisfying and calorie-rich meal (~${favCals} cal)
-${mealCount > 1 ? `OTHER MEALS: approximately ${otherCals} calories each` : ''}
-${hasSnack ? 'SNACK: always ~200 calories, simple, no cooking required' : ''}
-
-PROTEINS: ${d.proteins || 'No preference'}
-EQUIPMENT: ${d.equipment || 'Standard kitchen'}
-ALLERGIES BANNED: ${d.hardAllergies || 'None'}
-RESTRICTIONS: ${d.restrictions || 'None'}
-CUISINE: ${d.cuisine || 'No preference'}
-AVOID: ${d.dislikes || 'None'}
-SKILL: ${d.skill} | REPEATS OK: ${d.mealRepeat || 'Somewhat'} | TRACKS: ${d.tracking || 'No'}
-HEALTH CONTEXT: ${d.healthContext || 'None'}
-NOTES: ${d.notes || 'None'}
-
-Scale all quantities for ${d.household} person(s). Macros are for the full household serving.
-
-CALORIE & MACRO TARGETS
-Daily calories: ${goalCalories} cal
-Protein: ${protein}g | Carbs: ${carbs}g | Fat: ${fat}g
-Strategy: ${Math.abs(goalCalories - tdee)} calorie ${goalCalories < tdee ? 'deficit' : 'surplus'} from TDEE of ${tdee} to support ${d.goal.toLowerCase()}.
-
-Use this exact format for every day — no deviations:
-
-${mealDayTemplate}
-
-Write Day 1 through Day ${d.days} completely. Do not skip any day. Do not write the grocery list until all ${d.days} days are done.
-
-After all days are written:
-
-═══════════════════════════════════════
-WEEKLY GROCERY LIST
-═══════════════════════════════════════
-
-PRODUCE:
-• [item] — [total quantity for the week]
-
-PROTEIN & MEAT:
-• [item] — [total]
-
-DAIRY & EGGS:
-• [item] — [total]
-
-PANTRY & DRY GOODS:
-• [item] — [total]
-
-FROZEN:
-• [item] — [total]
-
-ESTIMATED TOTAL: $XX-$XX
-(Budget: ${d.budget || '$150'} | ${d.household} person(s), ${d.days} days)
-
-═══════════════════════════════════════
-MEAL PREP TIPS
-═══════════════════════════════════════
-1. [Tip specific to their cooking style and equipment]
-2. [Batch cooking suggestion based on their meals]
-3. [Storage tip]
-4. [Budget tip]
-5. [Macro tracking tip based on their tracking level]
-
-Allowed meal labels: ${allowedLabels} only. Plain text only. No markdown.`;
+    'CRITICAL FORMATTING RULE: Use ONLY these section headers each day: ' + allowedLabels + '.\n' +
+    forbiddenNote + '\n\n' +
+    'Generate a complete ' + d.days + '-day meal plan for this client.\n\n' +
+    'CLIENT:\n' +
+    '- Name: ' + (d.name || 'Client') + ' | Age: ' + d.age + ' | Sex: ' + d.sex + ' | Height: ' + d.height + ' | Weight: ' + d.weight + ' lbs\n' +
+    '- Activity: ' + d.activity + ' | Goal: ' + d.goal + ' | Macros: ' + d.macro + '\n' +
+    '- Household: ' + d.household + ' person(s) | Days: ' + d.days + ' | Budget: ' + (d.budget || '$150') + '/wk\n\n' +
+    'DAILY STRUCTURE: ' + allowedLabels + '\n' +
+    'FAVORITE MEAL: ' + favoriteMeal + ' -- make this the most satisfying and calorie-rich meal (~' + favCals + ' cal)\n' +
+    (otherMealsLine ? otherMealsLine + '\n' : '') +
+    (snackLine ? snackLine + '\n' : '') +
+    '\nPROTEINS: ' + (d.proteins || 'No preference') + '\n' +
+    'EQUIPMENT: ' + (d.equipment || 'Standard kitchen') + '\n' +
+    'ALLERGIES BANNED: ' + (d.hardAllergies || 'None') + '\n' +
+    'RESTRICTIONS: ' + (d.restrictions || 'None') + '\n' +
+    'CUISINE: ' + (d.cuisine || 'No preference') + '\n' +
+    'AVOID: ' + (d.dislikes || 'None') + '\n' +
+    'SKILL: ' + d.skill + ' | REPEATS OK: ' + (d.mealRepeat || 'Somewhat') + ' | TRACKS: ' + (d.tracking || 'No') + '\n' +
+    'HEALTH CONTEXT: ' + (d.healthContext || 'None') + '\n' +
+    'NOTES: ' + (d.notes || 'None') + '\n\n' +
+    'Scale all quantities for ' + d.household + ' person(s). Macros are for the full household serving.\n\n' +
+    'CALORIE & MACRO TARGETS\n' +
+    'Daily calories: ' + goalCalories + ' cal\n' +
+    'Protein: ' + protein + 'g | Carbs: ' + carbs + 'g | Fat: ' + fat + 'g\n' +
+    'Strategy: ' + calDiff + ' calorie ' + calDirection + ' from TDEE of ' + tdee + ' to support ' + goalLower + '.\n\n' +
+    'Use this exact format for every day -- no deviations:\n\n' +
+    mealDayTemplate + '\n\n' +
+    'Write Day 1 through Day ' + d.days + ' completely. Do not skip any day. Do not write the grocery list until all ' + d.days + ' days are done.\n\n' +
+    'After all days are written:\n\n' +
+    '===================================\n' +
+    'WEEKLY GROCERY LIST\n' +
+    '===================================\n\n' +
+    'PRODUCE:\n' +
+    '- [item] - [total quantity for the week]\n\n' +
+    'PROTEIN & MEAT:\n' +
+    '- [item] - [total]\n\n' +
+    'DAIRY & EGGS:\n' +
+    '- [item] - [total]\n\n' +
+    'PANTRY & DRY GOODS:\n' +
+    '- [item] - [total]\n\n' +
+    'FROZEN:\n' +
+    '- [item] - [total]\n\n' +
+    'ESTIMATED TOTAL: $XX-$XX\n' +
+    '(Budget: ' + (d.budget || '$150') + ' | ' + d.household + ' person(s), ' + d.days + ' days)\n\n' +
+    '===================================\n' +
+    'MEAL PREP TIPS\n' +
+    '===================================\n' +
+    '1. [Tip specific to their cooking style and equipment]\n' +
+    '2. [Batch cooking suggestion based on their meals]\n' +
+    '3. [Storage tip]\n' +
+    '4. [Budget tip]\n' +
+    '5. [Macro tracking tip based on their tracking level]\n\n' +
+    'Allowed meal labels: ' + allowedLabels + ' only. Plain text only. No markdown.';
 
   return { systemPrompt, userPrompt };
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Meal Plan Generator running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', function() {
+  console.log('Meal Plan Generator running on port ' + PORT);
 });
