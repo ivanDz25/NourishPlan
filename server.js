@@ -26,7 +26,7 @@ app.post('/generate', async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 20000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }]
@@ -41,6 +41,7 @@ app.post('/generate', async (req, res) => {
     const data = await response.json();
     let text = (data.content?.map(b => b.text || '').join('') || '');
 
+    // Strip markdown formatting
     text = text
       .replace(/\*\*(.+?)\*\*/g, '$1')
       .replace(/\*(.+?)\*/g, '$1')
@@ -48,7 +49,34 @@ app.post('/generate', async (req, res) => {
       .replace(/^>\s+/gm, '')
       .replace(/`{1,3}[^`]*`{1,3}/g, '')
       .replace(/^\s*[-*]\s+/gm, '- ');
-    
+
+    // Strip ALL AI chain-of-thought / reasoning / calculation lines
+    text = text.split('\n').filter(function(line) {
+      var t = line.trim();
+      if (!t) return true; // keep blank lines for spacing
+      var lower = t.toLowerCase();
+      return !(
+        /^day\s+\d+\s*(total|check|verification)/i.test(t) ||
+        /let me (reduce|adjust|recalculate|change|modify|lower|pick)/i.test(t) ||
+        /i (can|will|should|need to|must) (reduce|adjust|change|recalculate|lower|pick|use)/i.test(t) ||
+        /just (barely|slightly|a bit|a little) (over|under|above|below)/i.test(t) ||
+        /that (saves|brings|gives|puts|leaves)/i.test(t) ||
+        /within.*ceiling/i.test(t) ||
+        /\d+\s*[\+\-]\s*\d+.*=\s*\d+\s*(cal)?/i.test(t) ||
+        /bringing.*to \d+\s*cal/i.test(t) ||
+        /total\s*=\s*[\d\s\+\-]+\s*(cal|calories)/i.test(t) ||
+        /\. good\.?\s*$/i.test(t) ||
+        /good\.\s*$/i.test(t) ||
+        /^(checking|verifying|calculating|adjusting|recalculating)/i.test(t) ||
+        /under (the )?(ceiling|limit|budget|target)/i.test(t) ||
+        /over (the )?(ceiling|limit|budget|target)/i.test(t) ||
+        /(ceiling|budget)\. good/i.test(t) ||
+        /perfect\.\s*$/i.test(t) ||
+        /^\d+\s*\+\s*\d+/.test(t)
+      );
+    }).join('\n');
+
+    // Fix meal label mapping for 2-meal configs
     if ((clientData.meals || '').toLowerCase().trim() === '2 meals + snacks') {
       text = text.replace(/^DINNER:/gm, 'SNACK:').replace(/^DINNER$/gm, 'SNACK');
       text = text.replace(/^BREAKFAST:/gm, 'MEAL 1:').replace(/^BREAKFAST$/gm, 'MEAL 1');
@@ -79,7 +107,7 @@ async function sendEmail(clientData, planText) {
   const fromEmail = process.env.FROM_EMAIL || 'plans@nourishplan.co';
   const htmlBody = buildEmailHTML(clientData, planText);
 
-  await fetch('https://api.resend.com/emails', {
+  const result = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -92,7 +120,7 @@ async function sendEmail(clientData, planText) {
       html: htmlBody
     })
   });
-  console.log('Email sent to ' + clientData.email);
+  console.log('Email sent to ' + clientData.email + ' | Status: ' + result.status);
 }
 
 function buildEmailHTML(clientData, planText) {
@@ -137,8 +165,8 @@ function buildEmailHTML(clientData, planText) {
 }
 
 const mealLabelMap = {
-  '2 meals + snacks': ['BREAKFAST', 'LUNCH', 'SNACK'],  
-  '2 meals/day': ['BREAKFAST', 'DINNER'],               
+  '2 meals + snacks': ['BREAKFAST', 'LUNCH', 'SNACK'],
+  '2 meals/day': ['BREAKFAST', 'DINNER'],
   '3 meals': ['BREAKFAST', 'LUNCH', 'DINNER'],
   '3 meals/day': ['BREAKFAST', 'LUNCH', 'DINNER'],
   '3 meals + snacks': ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'],
@@ -155,14 +183,12 @@ function buildPrompt(d) {
   const hasSnack = labels.includes('SNACK');
   const mealCount = labels.filter(function(l) { return l !== 'SNACK'; }).length;
 
-  console.log('d.meals raw value:', JSON.stringify(d.meals));
-  console.log('mealKey matched:', mealKey);
-  console.log('labels resolved:', JSON.stringify(labels));
-  console.log('hasSnack:', hasSnack);
+  console.log('d.meals raw:', JSON.stringify(d.meals), '| matched:', mealKey, '| labels:', labels);
 
   const favoriteMeal = (d.biggestMeal || 'Dinner (evening)');
 
-  const snackBlock = 'SNACK: [Snack Name - simple, no cooking, ~200 cal]\n' +
+  const snackBlock =
+    'SNACK: [Snack Name]\n' +
     'Ingredients:\n' +
     '- [ingredient] - [quantity]\n' +
     'Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat';
@@ -182,56 +208,64 @@ function buildPrompt(d) {
       return label === 'SNACK' ? snackBlock : mealBlock(label);
     }).join('\n\n');
 
-  // Calorie math
+  // ── Calorie math ──
   const weight = parseFloat(d.weight) || 180;
   const age = parseFloat(d.age) || 30;
   const isMale = (d.sex || '').toLowerCase().includes('male');
+
   function parseHeightToCm(h) {
-      h = (h || '').toString().trim();
-      var ftIn = h.match(/(\d+)['\s](\d+)/);
-      if (ftIn) return Math.round((parseInt(ftIn[1]) * 12 + parseInt(ftIn[2])) * 2.54);
-      var ftOnly = h.match(/^(\d+)'?$/);
-      if (ftOnly && parseInt(ftOnly[1]) < 8) return Math.round(parseInt(ftOnly[1]) * 30.48);
-      var cm = parseFloat(h);
-      if (cm > 100) return Math.round(cm);
-      return 170;
-    }
-    const heightCm = parseHeightToCm(d.height);
+    h = (h || '').toString().trim();
+    var ftIn = h.match(/(\d+)['\s](\d+)/);
+    if (ftIn) return Math.round((parseInt(ftIn[1]) * 12 + parseInt(ftIn[2])) * 2.54);
+    var ftOnly = h.match(/^(\d+)'?$/);
+    if (ftOnly && parseInt(ftOnly[1]) < 8) return Math.round(parseInt(ftOnly[1]) * 30.48);
+    var cm = parseFloat(h);
+    if (cm > 100) return Math.round(cm);
+    return 170;
+  }
+
+  const heightCm = parseHeightToCm(d.height);
   const bmr = isMale
     ? Math.round(10 * weight * 0.453592 + 6.25 * heightCm - 5 * age + 5)
     : Math.round(10 * weight * 0.453592 + 6.25 * heightCm - 5 * age - 161);
-  const activityMultiplier = (d.activity || '').toLowerCase().includes('lightly') ? 1.375
-      : (d.activity || '').toLowerCase().includes('moderately') ? 1.55
-      : (d.activity || '').toLowerCase().includes('very') ? 1.725
-      : (d.activity || '').toLowerCase().includes('athlete') ? 1.9
-      : 1.2;
-    const tdee = Math.round(bmr * activityMultiplier);
-  let goalCalories = d.goal && d.goal.toLowerCase().includes('lose')
-    ? tdee - 500
-    : d.goal && d.goal.toLowerCase().includes('bulk')
-      ? tdee + 300
-      : tdee;
 
-  // Hard calorie override — explicit field takes priority, then check notes as fallback
+  const activityMultiplier =
+    (d.activity || '').toLowerCase().includes('lightly') ? 1.375 :
+    (d.activity || '').toLowerCase().includes('moderately') ? 1.55 :
+    (d.activity || '').toLowerCase().includes('very') ? 1.725 :
+    (d.activity || '').toLowerCase().includes('athlete') ? 1.9 : 1.2;
+
+  const tdee = Math.round(bmr * activityMultiplier);
+
+  let goalCalories = d.goal && d.goal.toLowerCase().includes('lose') ? tdee - 500
+    : d.goal && d.goal.toLowerCase().includes('bulk') ? tdee + 300
+    : tdee;
+
+  // Explicit calorie field takes priority, then notes fallback
   if (d.calorieTarget && parseInt(d.calorieTarget) >= 800 && parseInt(d.calorieTarget) <= 5000) {
     goalCalories = parseInt(d.calorieTarget);
-    console.log('Calorie override applied from form field:', goalCalories);
+    console.log('Calorie override from form field:', goalCalories);
   } else {
-    const allUserNotes = ((d.notes || '') + ' ' + (d.healthContext || '')).toLowerCase();
-    const calorieOverrideMatch = allUserNotes.match(/(\d{3,4})\s*(?:cal(?:ories?)?|kcal)/i);
-    if (calorieOverrideMatch) {
-      const parsedCal = parseInt(calorieOverrideMatch[1]);
-      if (parsedCal >= 800 && parsedCal <= 4000) {
-        goalCalories = parsedCal;
-        console.log('Calorie override applied from user notes:', goalCalories);
+    const allNotes = ((d.notes || '') + ' ' + (d.healthContext || '')).toLowerCase();
+    const match = allNotes.match(/(\d{3,4})\s*(?:cal(?:ories?)?|kcal)/i);
+    if (match) {
+      const parsed = parseInt(match[1]);
+      if (parsed >= 800 && parsed <= 4000) {
+        goalCalories = parsed;
+        console.log('Calorie override from notes:', goalCalories);
       }
     }
   }
 
   const isKosher = (d.restrictions || '').toLowerCase().includes('kosher');
+  const isVegan = (d.restrictions || '').toLowerCase().includes('vegan');
+  const isVegetarian = (d.restrictions || '').toLowerCase().includes('vegetarian');
+  const isLowCarb = (d.macro || '').toLowerCase().includes('low carb') || (d.macro || '').toLowerCase().includes('keto');
+
   const protein = Math.round(weight * 0.453592 * 2.2);
   const fat = Math.round(goalCalories * 0.28 / 9);
   const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
+
   const snackCals = hasSnack ? 200 : 0;
   const mealCals = goalCalories - snackCals;
   const favCals = Math.round(mealCals * 0.55);
@@ -239,120 +273,111 @@ function buildPrompt(d) {
   const calDiff = Math.abs(goalCalories - tdee);
   const calDirection = goalCalories < tdee ? 'deficit' : 'surplus';
 
-  const mealStructureInstruction = 'Each day must contain EXACTLY these meal sections in this order: ' + allowedLabels + '. Use ONLY these labels. Do not add, rename, or reorder them.';
+  const mealStructureInstruction = 'Each day must contain EXACTLY these meal sections in this order: ' + allowedLabels + '. Use ONLY these labels. Never add, rename, or reorder them.';
 
-  const forbiddenNote = (labels.includes('BREAKFAST') ? '' : 'BREAKFAST is forbidden. ') +
+  const forbiddenNote =
+    (labels.includes('BREAKFAST') ? '' : 'BREAKFAST is forbidden. ') +
     (labels.includes('LUNCH') ? '' : 'LUNCH is forbidden. ') +
     (labels.includes('DINNER') ? '' : 'DINNER is forbidden. ') +
-    'Never use these as section headers unless listed above.';
+    'Never use forbidden labels as section headers.';
+
+  // ── Diet enforcement strings ──
+  const kosherRule = isKosher
+    ? '\n8. KOSHER: NEVER combine meat or poultry with dairy on the same day. If any meal has meat, zero dairy that day. If snack has dairy, that day is meat-free.'
+    : '';
+
+  const veganRule = isVegan
+    ? '\n9. VEGAN — ABSOLUTE: Zero animal products. No meat, fish, eggs, dairy, honey, whey. All protein must come exclusively from: tofu, tempeh, edamame, legumes, seeds, plant-based protein powder, nutritional yeast. Any animal product is a critical failure.'
+    : (isVegetarian ? '\n9. VEGETARIAN: No meat or fish. Eggs and dairy are allowed.' : '');
+
+  const lowCarbRule = isLowCarb
+    ? '\n10. LOW CARB — HARD LIMIT: Total net carbs per day must stay UNDER 50g. Avoid: rice, bread, pasta, oats, most beans, most fruit. Allowed: leafy greens, zucchini, broccoli, cauliflower, cucumber, bell pepper, nuts, seeds, avocado, tofu, tempeh, edamame. Each meal must stay under 15g net carbs.'
+    : '';
 
   const systemPrompt =
-    'You are an elite registered dietitian generating structured meal plans.\n\n' +
+    'You are an elite registered dietitian generating structured meal plans. Output ONLY the meal plan in the exact format specified. No commentary, no reasoning, no calculations, no self-correction text.\n\n' +
     'RULES YOU NEVER BREAK:\n\n' +
     '1. MEAL STRUCTURE: ' + mealStructureInstruction + '\n' +
-    '   CRITICAL: ' + forbiddenNote + '\n' +
-    (hasSnack ? '   SNACK is an afternoon or evening snack eaten AFTER the main meals. It is never a morning meal. Never label it BREAKFAST.\n' : '') +
-    '\n2. MEAL COUNT: Every day has exactly ' + labels.length + ' section(s): ' + allowedLabels + '. Never add or remove sections.\n' +
-    '\n3. FAVORITE MEAL: The client selected "' + favoriteMeal + '" as their favorite meal. Make it the most satisfying and calorie-rich meal (~' + favCals + ' cal). Other meals target ~' + otherCals + ' cal each.' + (hasSnack ? ' SNACK targets exactly 200 calories.' : '') + '\n' +
-    '\n4. COMPLETE ALL DAYS: Write all ' + d.days + ' days before the grocery list.\n' +
-    '\n5. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers.\n' +
-    '\n6. BANNED INGREDIENTS: ' + (d.hardAllergies || 'None') + ' -- never appear anywhere.\n' +
-    '\n7. CALORIE HARD LIMIT: Daily total MUST NOT exceed ' + goalCalories + ' calories. Before writing each meal calculate your running total. Per-meal budgets are NON-NEGOTIABLE:\n' +
-    '   - ' + favoriteMeal + ' (favorite): ' + favCals + ' cal MAX\n' +
-    (mealCount > 1 ? '   - All other main meals: ' + otherCals + ' cal each MAX\n' : '') +
-    (hasSnack ? '   - Snack: 200 cal MAX\n' : '') +
-    '   A single meal exceeding its budget is a critical failure. Reduce portions, not meal count.\n' +
-    '\n8. ' + (isKosher
-      ? 'KOSHER — HARD RULE: NEVER combine meat or poultry with dairy in the same day. If any meal contains meat/poultry, zero dairy that day. If a snack contains dairy (yogurt, cheese, milk), that entire day must be meat-free. Check every day before writing it.'
-      : 'No Kosher restrictions.') + '\n' +
-    '\n9. PORTION-FIRST RULE: Never write a meal at standard recipe portions and then report whatever calories result. Always calculate portion size to hit the calorie target first, then write the ingredients at those sized portions. A beef chuck roast at full recipe size is 800-1400 cal. Size it down or pick a leaner protein.\n' +
-    '\n10. CALORIE VERIFICATION: After writing each day, sum the meal macros. If total exceeds ' + goalCalories + ' (+50 cal), go back and reduce the largest meal\'s protein or fat portion before continuing to the next day.';
-  const otherMealsLine = mealCount > 1 ? 'OTHER MEALS: approximately ' + otherCals + ' calories each' : '';
-  const snackLine = hasSnack ? 'SNACK: always ~200 calories, simple, no cooking required' : '';
-  const goalLower = (d.goal || '').toLowerCase();
+    '   ' + forbiddenNote + '\n' +
+    (hasSnack ? '   SNACK appears AFTER all main meals. Never label it BREAKFAST.\n' : '') +
+    '\n2. MEAL COUNT: Every day has EXACTLY ' + labels.length + ' section(s): ' + allowedLabels + '.\n' +
+    '\n3. CALORIE BUDGET — NON-NEGOTIABLE:\n' +
+    '   Daily ceiling: ' + goalCalories + ' cal total\n' +
+    '   ' + favoriteMeal + ' (favorite): ' + favCals + ' cal\n' +
+    (mealCount > 1 ? '   All other main meals: ' + otherCals + ' cal each\n' : '') +
+    (hasSnack ? '   Snack: 200 cal exactly\n' : '') +
+    '   Size every ingredient portion to hit these targets BEFORE writing. Never write a meal at standard recipe size.\n' +
+    '\n4. ONE VERSION ONLY: Write each meal label EXACTLY ONCE per day. No drafts, no iterations, no multiple versions. The first version written is the only version.\n' +
+    '\n5. NO REASONING IN OUTPUT: Never write calculations, totals, self-corrections, or commentary in the output. The output contains ONLY meal plan content.\n' +
+    '\n6. COMPLETE ALL DAYS: Write all ' + d.days + ' days before the grocery list.\n' +
+    '\n7. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers.' +
+    (d.hardAllergies ? '\n   BANNED: ' + d.hardAllergies + ' — never appear anywhere.' : '') +
+    kosherRule +
+    veganRule +
+    lowCarbRule;
+
+  const dietEnforcement =
+    (isVegan ? 'VEGAN STRICT: Only tofu, tempeh, edamame, legumes, seeds, plant protein, nutritional yeast. Zero animal products.\n' : '') +
+    (isVegetarian && !isVegan ? 'VEGETARIAN: No meat or fish. Eggs and dairy OK.\n' : '') +
+    (isLowCarb ? 'LOW CARB STRICT: Under 50g net carbs/day. Under 15g per meal. No rice, bread, pasta, oats, most beans.\n' : '');
 
   const userPrompt =
-    'CRITICAL FORMATTING RULE: Use ONLY these section headers each day: ' + allowedLabels + '.\n' +
-    forbiddenNote + '\n\n' +
-    'Generate a complete ' + d.days + '-day meal plan for this client.\n\n' +
+    'OUTPUT FORMAT RULE: Use ONLY these section headers each day: ' + allowedLabels + '. ' + forbiddenNote + '\n' +
+    'CRITICAL: Do NOT write any calculations, totals, or reasoning in the output. Meal plan content only.\n\n' +
+    'Generate a complete ' + d.days + '-day meal plan.\n\n' +
     'CLIENT:\n' +
-    '- Name: ' + (d.name || 'Client') + ' | Age: ' + d.age + ' | Sex: ' + d.sex + ' | Height: ' + d.height + ' | Weight: ' + d.weight + ' lbs\n' +
-    '- Activity: ' + d.activity + ' | Goal: ' + d.goal + ' | Macros: ' + d.macro + '\n' +
-    '- Household: ' + d.household + ' person(s) | Days: ' + d.days + ' | Budget: ' + (d.budget || '$150') + '/wk\n\n' +
-    'DAILY STRUCTURE: ' + allowedLabels + '\n' +
-    'FAVORITE MEAL: ' + favoriteMeal + ' -- make this the most satisfying and calorie-rich meal (~' + favCals + ' cal)\n' +
-    (otherMealsLine ? otherMealsLine + '\n' : '') +
-    (snackLine ? snackLine + '\n' : '') +
+    '- ' + (d.name || 'Client') + ' | Age: ' + d.age + ' | ' + d.sex + ' | ' + d.height + ' | ' + d.weight + ' lbs\n' +
+    '- Activity: ' + d.activity + '\n' +
+    '- Goal: ' + d.goal + ' | Macro style: ' + d.macro + '\n' +
+    '- Household: ' + d.household + ' person(s) | ' + d.days + ' days | Budget: ' + (d.budget || '$150') + '/wk\n\n' +
+    'DAILY MEAL STRUCTURE: ' + allowedLabels + '\n' +
+    'BIGGEST MEAL: ' + favoriteMeal + ' → ' + favCals + ' cal\n' +
+    (mealCount > 1 ? 'OTHER MEALS: ' + otherCals + ' cal each\n' : '') +
+    (hasSnack ? 'SNACK: 200 cal, no cooking\n' : '') +
     '\nPROTEINS: ' + (d.proteins || 'No preference') + '\n' +
+    dietEnforcement +
     'EQUIPMENT: ' + (d.equipment || 'Standard kitchen') + '\n' +
-    'ALLERGIES BANNED: ' + (d.hardAllergies || 'None') + '\n' +
+    (d.hardAllergies ? 'BANNED INGREDIENTS: ' + d.hardAllergies + '\n' : '') +
     'RESTRICTIONS: ' + (d.restrictions || 'None') + '\n' +
     'CUISINE: ' + (d.cuisine || 'No preference') + '\n' +
     'AVOID: ' + (d.dislikes || 'None') + '\n' +
-    'SKILL: ' + d.skill + ' | REPEATS OK: ' + (d.mealRepeat || 'Somewhat') + ' | TRACKS: ' + (d.tracking || 'No') + '\n' +
-    'HEALTH CONTEXT: ' + (d.healthContext || 'None') + '\n' +
-    'NOTES: ' + (d.notes || 'None') + '\n\n' +
-    'Scale all quantities for ' + d.household + ' person(s). Macros are for the full household serving.\n\n' +
-    'CALORIE & MACRO TARGETS -- HARD LIMITS\n' +
-    'Daily calorie CEILING: ' + goalCalories + ' cal (this is a hard max -- do not exceed)\n' +
+    'SKILL: ' + (d.skill || 'Beginner') + '\n' +
+    'REPEATS OK: ' + (d.mealRepeat || 'Somewhat') + '\n' +
+    'TRACKS: ' + (d.tracking || 'No') + '\n' +
+    (d.healthContext ? 'HEALTH CONTEXT: ' + d.healthContext + '\n' : '') +
+    (d.notes ? 'NOTES: ' + d.notes + '\n' : '') +
+    '\nCALORIE TARGETS (hard limits — size portions to meet these exactly):\n' +
+    'Daily ceiling: ' + goalCalories + ' cal\n' +
     'Protein: ' + protein + 'g | Carbs: ' + carbs + 'g | Fat: ' + fat + 'g\n' +
-    'Strategy: ' + calDiff + ' calorie ' + calDirection + ' from TDEE of ' + tdee + ' to support ' + goalLower + '.\n\n' +
-    'PER-MEAL CALORIE BUDGET — HARD CEILINGS:\n' +
-    '- ' + favoriteMeal + ' (biggest meal): ' + favCals + ' cal MAX\n' +
-    (mealCount > 1 ? '- All other main meals: ' + otherCals + ' cal each MAX\n' : '') +
-    (hasSnack ? '- Snack: 200 cal MAX\n' : '') +
-    '\nPORTION SIZING RULE: Do NOT choose a meal and then report its natural calorie count.\n' +
-    'Instead: (1) choose a meal type, (2) calculate what portion sizes hit the calorie target, (3) write those portion sizes in the ingredients.\n' +
-    'Example: if dinner target is ' + favCals + ' cal and you choose beef, work out how many oz of beef fits within ' + favCals + ' cal BEFORE writing the ingredient list.\n' +
-    'A 10 oz beef chuck roast with 2 tbsp olive oil is ~1,200 cal on its own. That is a full day\'s budget in one meal. Size portions accordingly.\n' +
-    'If a protein source is too calorie-dense to fit the budget in a satisfying portion, choose a leaner protein for that meal.\n' +
-    'Every meal must land within 50 calories of its target. No exceptions.\n\n' +
-    'Use this exact format for every day -- no deviations:\n\n' +
-mealDayTemplate + '\n\n' +
-'CONCRETE EXAMPLE (follow this structure exactly):\n\n' +
-'DAY 1 - MONDAY\n\n' +
-'MEAL 1: Scrambled Eggs with Turkey Sausage\n' +
-'Ingredients:\n- Ground turkey sausage - 1.5 lbs\n- Eggs - 8 large\n' +
-'Instructions:\n1. Cook sausage. 2. Scramble eggs.\n' +
-'Macros: 836 cal | 80g protein | 10g carbs | 38g fat\nPrep time: 20 min\n\n' +
-'MEAL 2: Slow Cooker Beef Stew\n' +
-'Ingredients:\n- Beef chuck - 2.5 lbs\n' +
-'Instructions:\n1. Sear beef. 2. Add to slow cooker.\n' +
-'Macros: 1022 cal | 105g protein | 20g carbs | 18g fat\nPrep time: 25 min\n\n' +
-'SNACK: Hard Boiled Eggs and String Cheese\n' +
-'Ingredients:\n- Hard boiled eggs - 4\n- String cheese sticks - 4\n' +
-'Macros: 200 cal | 22g protein | 2g carbs | 12g fat\n\n' +
-    'Write Day 1 through Day ' + d.days + ' completely. Do not skip any day. Do not write the grocery list until all ' + d.days + ' days are done.\n\n' +
-    'After all days are written:\n\n' +
+    'Context: ' + calDiff + ' cal ' + calDirection + ' from TDEE ' + tdee + ' for ' + d.goal + '\n\n' +
+    'Use this EXACT format — no deviations:\n\n' +
+    mealDayTemplate + '\n\n' +
+    'Write Day 1 through Day ' + d.days + '. Complete every day. Do not write the grocery list until ALL days are done.\n\n' +
+    'After all days:\n\n' +
     '===================================\n' +
     'WEEKLY GROCERY LIST\n' +
     '===================================\n\n' +
-    'PRODUCE:\n' +
-    '- [item] - [total quantity for the week]\n\n' +
-    'PROTEIN & MEAT:\n' +
-    '- [item] - [total]\n\n' +
-    'DAIRY & EGGS:\n' +
-    '- [item] - [total]\n\n' +
-    'PANTRY & DRY GOODS:\n' +
-    '- [item] - [total]\n\n' +
-    'FROZEN:\n' +
-    '- [item] - [total]\n\n' +
+    'PRODUCE:\n- [item] - [total qty for week]\n\n' +
+    'PROTEIN & MEAT:\n- [item] - [total]\n\n' +
+    'DAIRY & EGGS:\n- [item] - [total]\n\n' +
+    'PANTRY & DRY GOODS:\n- [item] - [total]\n\n' +
+    'FROZEN:\n- [item] - [total]\n\n' +
     'ESTIMATED TOTAL: $XX-$XX\n' +
     '(Budget: ' + (d.budget || '$150') + ' | ' + d.household + ' person(s), ' + d.days + ' days)\n\n' +
     '===================================\n' +
     'MEAL PREP TIPS\n' +
     '===================================\n' +
-    '1. [Tip specific to their cooking style and equipment]\n' +
-    '2. [Batch cooking suggestion based on their meals]\n' +
+    '1. [Tip for their cooking style and equipment]\n' +
+    '2. [Batch cooking suggestion]\n' +
     '3. [Storage tip]\n' +
     '4. [Budget tip]\n' +
-    '5. [Macro tracking tip based on their tracking level]\n\n' +
-    'Allowed meal labels: ' + allowedLabels + ' only. Plain text only. No markdown.';
+    '5. [Macro tracking tip for their tracking level]\n\n' +
+    'Allowed labels: ' + allowedLabels + ' only. Plain text only. No markdown. No reasoning text.';
 
   return { systemPrompt, userPrompt };
 }
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', function() {
-  console.log('Meal Plan Generator running on port ' + PORT);
+  console.log('NourishPlan running on port ' + PORT);
 });
