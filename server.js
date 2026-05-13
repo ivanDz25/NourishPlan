@@ -59,6 +59,13 @@ app.post('/generate', async (req, res) => {
       text = text.replace(/^DINNER:/gm, 'MEAL 2:').replace(/^DINNER$/gm, 'MEAL 2');
     }
 
+    // Send email async — don't block the response
+    if (clientData && clientData.email) {
+      sendEmail(clientData, text).catch(function(emailErr) {
+        console.error('Email send failed:', emailErr.message);
+      });
+    }
+
     res.json({ plan: text });
 
   } catch (err) {
