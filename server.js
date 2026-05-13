@@ -205,14 +205,19 @@ function buildPrompt(d) {
       ? tdee + 300
       : tdee;
 
-  // Hard calorie override — if user specified a number in notes or health context
-  const allUserNotes = ((d.notes || '') + ' ' + (d.healthContext || '')).toLowerCase();
-  const calorieOverrideMatch = allUserNotes.match(/(\d{3,4})\s*(?:cal(?:ories?)?|kcal)/i);
-  if (calorieOverrideMatch) {
-    const parsedCal = parseInt(calorieOverrideMatch[1]);
-    if (parsedCal >= 800 && parsedCal <= 4000) {
-      goalCalories = parsedCal;
-      console.log('Calorie override applied from user notes:', goalCalories);
+  // Hard calorie override — explicit field takes priority, then check notes as fallback
+  if (d.calorieTarget && parseInt(d.calorieTarget) >= 800 && parseInt(d.calorieTarget) <= 5000) {
+    goalCalories = parseInt(d.calorieTarget);
+    console.log('Calorie override applied from form field:', goalCalories);
+  } else {
+    const allUserNotes = ((d.notes || '') + ' ' + (d.healthContext || '')).toLowerCase();
+    const calorieOverrideMatch = allUserNotes.match(/(\d{3,4})\s*(?:cal(?:ories?)?|kcal)/i);
+    if (calorieOverrideMatch) {
+      const parsedCal = parseInt(calorieOverrideMatch[1]);
+      if (parsedCal >= 800 && parsedCal <= 4000) {
+        goalCalories = parsedCal;
+        console.log('Calorie override applied from user notes:', goalCalories);
+      }
     }
   }
 
