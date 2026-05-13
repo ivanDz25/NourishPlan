@@ -258,7 +258,8 @@ function buildPrompt(d) {
     '\n8. ' + (isKosher
       ? 'KOSHER — HARD RULE: NEVER combine meat or poultry with dairy in the same day. If any meal contains meat/poultry, zero dairy that day. If a snack contains dairy (yogurt, cheese, milk), that entire day must be meat-free. Check every day before writing it.'
       : 'No Kosher restrictions.') + '\n' +
-    '\n9. CALORIE VERIFICATION: After writing each day, confirm the sum of all meal macros equals ' + goalCalories + ' cal (+/- 50 cal). If not, adjust before moving to the next day.';
+    '\n9. PORTION-FIRST RULE: Never write a meal at standard recipe portions and then report whatever calories result. Always calculate portion size to hit the calorie target first, then write the ingredients at those sized portions. A beef chuck roast at full recipe size is 800-1400 cal. Size it down or pick a leaner protein.\n' +
+    '\n10. CALORIE VERIFICATION: After writing each day, sum the meal macros. If total exceeds ' + goalCalories + ' (+50 cal), go back and reduce the largest meal\'s protein or fat portion before continuing to the next day.';
   const otherMealsLine = mealCount > 1 ? 'OTHER MEALS: approximately ' + otherCals + ' calories each' : '';
   const snackLine = hasSnack ? 'SNACK: always ~200 calories, simple, no cooking required' : '';
   const goalLower = (d.goal || '').toLowerCase();
@@ -289,11 +290,16 @@ function buildPrompt(d) {
     'Daily calorie CEILING: ' + goalCalories + ' cal (this is a hard max -- do not exceed)\n' +
     'Protein: ' + protein + 'g | Carbs: ' + carbs + 'g | Fat: ' + fat + 'g\n' +
     'Strategy: ' + calDiff + ' calorie ' + calDirection + ' from TDEE of ' + tdee + ' to support ' + goalLower + '.\n\n' +
-    'PER-MEAL CALORIE BUDGET (enforce every day):\n' +
-    '- ' + favoriteMeal + ' (biggest/favorite meal): ' + favCals + ' cal\n' +
-    (mealCount > 1 ? '- All other main meals: ' + otherCals + ' cal each\n' : '') +
-    (hasSnack ? '- Snack: 200 cal\n' : '') +
-    'CHECK: totals must sum to ' + goalCalories + ' cal. If a meal runs over, reduce its portions before writing the next meal.\n\n' +
+    'PER-MEAL CALORIE BUDGET — HARD CEILINGS:\n' +
+    '- ' + favoriteMeal + ' (biggest meal): ' + favCals + ' cal MAX\n' +
+    (mealCount > 1 ? '- All other main meals: ' + otherCals + ' cal each MAX\n' : '') +
+    (hasSnack ? '- Snack: 200 cal MAX\n' : '') +
+    '\nPORTION SIZING RULE: Do NOT choose a meal and then report its natural calorie count.\n' +
+    'Instead: (1) choose a meal type, (2) calculate what portion sizes hit the calorie target, (3) write those portion sizes in the ingredients.\n' +
+    'Example: if dinner target is ' + favCals + ' cal and you choose beef, work out how many oz of beef fits within ' + favCals + ' cal BEFORE writing the ingredient list.\n' +
+    'A 10 oz beef chuck roast with 2 tbsp olive oil is ~1,200 cal on its own. That is a full day\'s budget in one meal. Size portions accordingly.\n' +
+    'If a protein source is too calorie-dense to fit the budget in a satisfying portion, choose a leaner protein for that meal.\n' +
+    'Every meal must land within 50 calories of its target. No exceptions.\n\n' +
     'Use this exact format for every day -- no deviations:\n\n' +
 mealDayTemplate + '\n\n' +
 'CONCRETE EXAMPLE (follow this structure exactly):\n\n' +
