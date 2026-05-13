@@ -199,11 +199,24 @@ function buildPrompt(d) {
       : (d.activity || '').toLowerCase().includes('athlete') ? 1.9
       : 1.2;
     const tdee = Math.round(bmr * activityMultiplier);
-  const goalCalories = d.goal && d.goal.toLowerCase().includes('lose')
+  let goalCalories = d.goal && d.goal.toLowerCase().includes('lose')
     ? tdee - 500
     : d.goal && d.goal.toLowerCase().includes('bulk')
       ? tdee + 300
       : tdee;
+
+  // Hard calorie override — if user specified a number in notes or health context
+  const allUserNotes = ((d.notes || '') + ' ' + (d.healthContext || '')).toLowerCase();
+  const calorieOverrideMatch = allUserNotes.match(/(\d{3,4})\s*(?:cal(?:ories?)?|kcal)/i);
+  if (calorieOverrideMatch) {
+    const parsedCal = parseInt(calorieOverrideMatch[1]);
+    if (parsedCal >= 800 && parsedCal <= 4000) {
+      goalCalories = parsedCal;
+      console.log('Calorie override applied from user notes:', goalCalories);
+    }
+  }
+
+  const isKosher = (d.restrictions || '').toLowerCase().includes('kosher');
   const protein = Math.round(weight * 0.453592 * 2.2);
   const fat = Math.round(goalCalories * 0.28 / 9);
   const carbs = Math.round((goalCalories - protein * 4 - fat * 9) / 4);
@@ -231,8 +244,16 @@ function buildPrompt(d) {
     '\n3. FAVORITE MEAL: The client selected "' + favoriteMeal + '" as their favorite meal. Make it the most satisfying and calorie-rich meal (~' + favCals + ' cal). Other meals target ~' + otherCals + ' cal each.' + (hasSnack ? ' SNACK targets exactly 200 calories.' : '') + '\n' +
     '\n4. COMPLETE ALL DAYS: Write all ' + d.days + ' days before the grocery list.\n' +
     '\n5. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers.\n' +
-    '\n6. BANNED INGREDIENTS: ' + (d.hardAllergies || 'None') + ' -- never appear anywhere.';
-
+    '\n6. BANNED INGREDIENTS: ' + (d.hardAllergies || 'None') + ' -- never appear anywhere.\n' +
+    '\n7. CALORIE HARD LIMIT: Daily total MUST NOT exceed ' + goalCalories + ' calories. Before writing each meal calculate your running total. Per-meal budgets are NON-NEGOTIABLE:\n' +
+    '   - ' + favoriteMeal + ' (favorite): ' + favCals + ' cal MAX\n' +
+    (mealCount > 1 ? '   - All other main meals: ' + otherCals + ' cal each MAX\n' : '') +
+    (hasSnack ? '   - Snack: 200 cal MAX\n' : '') +
+    '   A single meal exceeding its budget is a critical failure. Reduce portions, not meal count.\n' +
+    '\n8. ' + (isKosher
+      ? 'KOSHER — HARD RULE: NEVER combine meat or poultry with dairy in the same day. If any meal contains meat/poultry, zero dairy that day. If a snack contains dairy (yogurt, cheese, milk), that entire day must be meat-free. Check every day before writing it.'
+      : 'No Kosher restrictions.') + '\n' +
+    '\n9. CALORIE VERIFICATION: After writing each day, confirm the sum of all meal macros equals ' + goalCalories + ' cal (+/- 50 cal). If not, adjust before moving to the next day.';
   const otherMealsLine = mealCount > 1 ? 'OTHER MEALS: approximately ' + otherCals + ' calories each' : '';
   const snackLine = hasSnack ? 'SNACK: always ~200 calories, simple, no cooking required' : '';
   const goalLower = (d.goal || '').toLowerCase();
@@ -259,10 +280,15 @@ function buildPrompt(d) {
     'HEALTH CONTEXT: ' + (d.healthContext || 'None') + '\n' +
     'NOTES: ' + (d.notes || 'None') + '\n\n' +
     'Scale all quantities for ' + d.household + ' person(s). Macros are for the full household serving.\n\n' +
-    'CALORIE & MACRO TARGETS\n' +
-    'Daily calories: ' + goalCalories + ' cal\n' +
+    'CALORIE & MACRO TARGETS -- HARD LIMITS\n' +
+    'Daily calorie CEILING: ' + goalCalories + ' cal (this is a hard max -- do not exceed)\n' +
     'Protein: ' + protein + 'g | Carbs: ' + carbs + 'g | Fat: ' + fat + 'g\n' +
     'Strategy: ' + calDiff + ' calorie ' + calDirection + ' from TDEE of ' + tdee + ' to support ' + goalLower + '.\n\n' +
+    'PER-MEAL CALORIE BUDGET (enforce every day):\n' +
+    '- ' + favoriteMeal + ' (biggest/favorite meal): ' + favCals + ' cal\n' +
+    (mealCount > 1 ? '- All other main meals: ' + otherCals + ' cal each\n' : '') +
+    (hasSnack ? '- Snack: 200 cal\n' : '') +
+    'CHECK: totals must sum to ' + goalCalories + ' cal. If a meal runs over, reduce its portions before writing the next meal.\n\n' +
     'Use this exact format for every day -- no deviations:\n\n' +
 mealDayTemplate + '\n\n' +
 'CONCRETE EXAMPLE (follow this structure exactly):\n\n' +
