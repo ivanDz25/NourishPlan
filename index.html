@@ -154,6 +154,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
   <p>Takes about 2 minutes. Your plan generates instantly.</p>
   <div id="error-banner" class="error-banner" style="display:none"></div>
   <form id="mealForm" onsubmit="handleSubmit(event)">
+
     <div class="form-block">
       <h3>About you</h3>
       <div class="grid2">
@@ -178,6 +179,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         </div>
       </div>
     </div>
+
     <div class="form-block">
       <h3>Your goal</h3>
       <div class="field">
@@ -200,14 +202,15 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
           <div class="chip"><label><input type="radio" name="macro" value="Balanced (40C/30P/30F)"/><span>Balanced</span></label></div>
           <div class="chip"><label><input type="radio" name="macro" value="High carb / performance"/><span>High carb</span></label></div>
           <div class="chip"><label><input type="radio" name="macro" value="No preference"/><span>No preference</span></label></div>
-    </div>
+        </div>
       </div>
       <div class="field">
-        <label>Daily calorie target <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional — leave blank to auto-calculate from your stats)</span></label>
-        <div class="hint">Override the auto-calculation. Use this if you know your exact target — e.g. 1200, 1800, 2500.</div>
+        <label>Daily calorie target <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional — leave blank to auto-calculate)</span></label>
+        <div class="hint">Override auto-calculation if you know your exact target — e.g. 1200, 1800, 2500.</div>
         <input type="number" id="calorieTarget" placeholder="e.g. 1200" min="800" max="5000" step="50"/>
       </div>
     </div>
+
     <div class="form-block">
       <h3>Household and meals</h3>
       <div class="grid3">
@@ -243,6 +246,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         </div>
       </div>
     </div>
+
     <div class="form-block">
       <h3>Cooking and lifestyle</h3>
       <div class="field">
@@ -306,6 +310,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         </div>
       </div>
     </div>
+
     <div class="form-block">
       <h3>Diet and preferences</h3>
       <div class="field">
@@ -352,6 +357,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         <textarea id="healthContext" placeholder="e.g. dealing with inflammation and right-side abdominal pain, possibly gallbladder related. Want anti-inflammatory, low-fat meals." style="min-height:90px"></textarea>
       </div>
     </div>
+
     <div class="submit-wrap">
       <button type="submit" class="submit-btn" id="submitBtn">Generate my meal plan</button>
       <p class="submit-note">Your plan generates in about 30 seconds. First week is free.</p>
@@ -384,10 +390,12 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
 <script>
 function updateBudget(v){document.getElementById('budgetDisplay').textContent='$'+v}
 
+var FORM_FIELDS=['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget'];
+
 function saveFormState(){
   try{
     var s={};
-    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget'].forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
+    FORM_FIELDS.forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
     s.budget=document.getElementById('budgetSlider').value;
     var g=document.querySelector('input[name=goal]:checked');
     var m=document.querySelector('input[name=macro]:checked');
@@ -403,7 +411,7 @@ function saveFormState(){
 function loadFormState(){
   try{
     var s=JSON.parse(localStorage.getItem('np_form')||'{}');
-    ['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','tracking','hardAllergies','calorieTarget'].forEach(function(id){var el=document.getElementById(id);if(el&&s[id])el.value=s[id]});
+    FORM_FIELDS.forEach(function(id){var el=document.getElementById(id);if(el&&s[id])el.value=s[id]});
     if(s.budget){document.getElementById('budgetSlider').value=s.budget;updateBudget(s.budget)}
     if(s.goal){var g=document.querySelector('input[name=goal][value="'+s.goal+'"]');if(g)g.checked=true}
     if(s.macro){var m=document.querySelector('input[name=macro][value="'+s.macro+'"]');if(m)m.checked=true}
@@ -417,29 +425,70 @@ function loadFormState(){
 document.addEventListener('DOMContentLoaded',loadFormState);
 document.getElementById('mealForm').addEventListener('change',saveFormState);
 
-var LOADING_MSGS=['Calculating your daily calorie target...','Setting protein, carb, and fat targets...','Selecting meals that fit your budget...','Scaling ingredient quantities for your household...','Building your consolidated grocery list...','Adding meal prep tips...','Finalizing your plan...'];
+var LOADING_MSGS=[
+  'Calculating your daily calorie target...',
+  'Setting protein, carb, and fat targets...',
+  'Selecting meals that fit your budget...',
+  'Scaling ingredient quantities for your household...',
+  'Building your consolidated grocery list...',
+  'Adding meal prep tips...',
+  'Finalizing your plan...'
+];
 
 function showLoading(){
   document.getElementById('form-section').style.display='none';
   document.getElementById('results-section').style.display='none';
   document.getElementById('loading-section').style.display='block';
   var c=document.getElementById('loadingSteps');c.innerHTML='';
-  LOADING_MSGS.forEach(function(msg,i){var el=document.createElement('div');el.className='loading-step';el.textContent='-> '+msg;el.style.animationDelay=(i*0.6)+'s';c.appendChild(el)});
+  LOADING_MSGS.forEach(function(msg,i){
+    var el=document.createElement('div');el.className='loading-step';
+    el.textContent='-> '+msg;el.style.animationDelay=(i*0.6)+'s';c.appendChild(el);
+  });
 }
 
 var MEAL_LABELS=['BREAKFAST','LUNCH','DINNER','SNACK','MEAL 1','MEAL 2','MEAL 3','MEAL 4','MEAL 5'];
 
+// Lines that look like AI reasoning — filtered server-side AND client-side as a safety net
+function isReasoningLine(line) {
+  var t = line.trim();
+  if (!t) return false;
+  return (
+    /^day\s+\d+\s*(total|check|verification)/i.test(t) ||
+    /let me (reduce|adjust|recalculate|change|modify)/i.test(t) ||
+    /i (can|will|should) (reduce|adjust|change|recalculate)/i.test(t) ||
+    /just (barely|slightly) (over|under)/i.test(t) ||
+    /that saves \d/i.test(t) ||
+    /within.*ceiling/i.test(t) ||
+    /\d+\s*\+\s*\d+\s*\+\s*\d+\s*=\s*\d+/i.test(t) ||
+    /bringing.*to \d+\s*cal/i.test(t) ||
+    /total\s*=\s*[\d\s\+]+\s*(cal|calories)/i.test(t) ||
+    /\. good\.?\s*$/i.test(t) ||
+    /^(checking|verifying|calculating|adjusting|recalculating)/i.test(t)
+  );
+}
+
 function parsePlan(text){
+  var lines = text.split('\n');
+  var html = '';
+  var inDay=false, inGrocery=false, inTips=false, inMacro=false;
+  var inIngredients=false, inInstructions=false, groceryDone=false;
+  var grocerySections={}, currentSection=null, tipCount=0;
   var dayMealCount=0;
-  var lines=text.split('\n');
-  var html='';
-  var inDay=false,inGrocery=false,inTips=false,inMacro=false,inIngredients=false,inInstructions=false,groceryDone=false;
-  var grocerySections={},currentSection=null,tipCount=0;
+  // Deduplication: track which meal labels have been seen in the current day
+  var seenMealLabels={};
+
   var GSECTIONS=['PRODUCE','PROTEIN & MEAT','PROTEIN AND MEAT','DAIRY & EGGS','DAIRY AND EGGS','PANTRY & DRY GOODS','PANTRY AND DRY GOODS','FROZEN'];
+
   for(var i=0;i<lines.length;i++){
     var line=lines[i].trim();
-    if(!line||/^[=\-]{3,}$/.test(line))continue;
+    if(!line||/^[=\-]{3,}$/.test(line)) continue;
+
+    // Skip AI reasoning lines (client-side safety net)
+    if(isReasoningLine(line)) continue;
+
     var UP=line.toUpperCase();
+
+    // ── Section headers ──
     if(/^CALORIE.*MACRO/i.test(line)){
       if(inDay){html+='</div>';inDay=false}
       inMacro=true;inGrocery=false;inTips=false;
@@ -463,9 +512,11 @@ function parsePlan(text){
       html+='<div class="plan-section-label">Meal Prep Tips</div><div class="tips-card">';
       continue;
     }
+
+    // ── Macro card content ──
     if(inMacro){
-      if(/^daily calories/i.test(line)){
-        var cal=line.replace(/^daily calories:\s*/i,'').trim();
+      if(/^daily (calorie|cal)/i.test(line)){
+        var cal=line.replace(/^daily (calorie[s]?|cal)[^:]*:\s*/i,'').trim();
         html+='<div class="macro-row"><span class="macro-key">Daily Calories</span><span class="macro-val">'+cal+'</span></div><div class="macro-pills">';
       } else if(/^protein:/i.test(line)){
         line.split('|').forEach(function(p){
@@ -475,39 +526,51 @@ function parsePlan(text){
           html+='<div class="macro-pill"><div class="mp-val">'+val+'</div><div class="mp-lbl">'+lbl+'</div></div>';
         });
         html+='</div>';
-      } else if(/^strategy/i.test(line)){
-        html+='<div class="strategy-note">'+line.replace(/^strategy[^:]*:\s*/i,'').trim()+'</div></div>';
+      } else if(/^(strategy|context)/i.test(line)){
+        html+='<div class="strategy-note">'+line.replace(/^(strategy|context)[^:]*:\s*/i,'').trim()+'</div></div>';
         inMacro=false;
       }
       continue;
     }
+
+    // ── Day header ──
     if(/^DAY\s+\d+/i.test(line)){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
       if(inDay){html+='</div>'}
-      inDay=true;dayMealCount=0;
+      inDay=true;dayMealCount=0;seenMealLabels={};
       html+='<div class="day-card"><div class="day-header">'+line+'</div>';
       continue;
     }
+
+    // ── Inside a day ──
     if(inDay){
-      // Check if line is a meal label (BREAKFAST, LUNCH, DINNER, SNACK, MEAL 1, etc.)
       var cleanLine=line.replace(/\s*:.*$/,'').trim().toUpperCase();
       var isMealLabel=MEAL_LABELS.indexOf(cleanLine)>=0;
-      var dishName='';
+
       if(isMealLabel){
-        // Extract dish name from same line if format is "LABEL: Dish Name"
+        // DEDUPLICATION: skip if we've already seen this label today
+        if(seenMealLabels[cleanLine]){
+          continue;
+        }
+        seenMealLabels[cleanLine]=true;
+
+        var dishName='';
         var colonIdx=line.indexOf(':');
         if(colonIdx>=0){dishName=line.substring(colonIdx+1).trim()}
         if(inIngredients){html+='</ul>';inIngredients=false}
         if(inInstructions){html+='</ol>';inInstructions=false}
-        if(dayMealCount>1)html+='<hr class="meal-divider">';
+        if(dayMealCount>0) html+='<hr class="meal-divider">';
         dayMealCount++;
         html+='<div class="meal-type-label">'+cleanLine+'</div>';
-        if(dishName)html+='<div class="meal-title">'+dishName+'</div>';
+        if(dishName) html+='<div class="meal-title">'+dishName+'</div>';
         continue;
       }
-      // Check if line looks like a dish name (title case, no punctuation patterns of ingredients)
-      var isDishName=!inIngredients&&!inInstructions&&dayMealCount>0&&/^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&!/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT|IMPORTANT)/i.test(line);
+
+      // Dish name detection
+      var isDishName=!inIngredients&&!inInstructions&&dayMealCount>0&&
+        /^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&
+        !/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT)/i.test(line);
       if(isDishName){
         if(inIngredients){html+='</ul>';inIngredients=false}
         if(inInstructions){html+='</ol>';inInstructions=false}
@@ -515,6 +578,7 @@ function parsePlan(text){
         continue;
       }
     }
+
     if(inDay&&/^ingredients:?$/i.test(line)){
       if(inInstructions){html+='</ol>';inInstructions=false}
       if(inIngredients){html+='</ul>';}
@@ -536,18 +600,20 @@ function parsePlan(text){
       if(inIngredients){html+='</ul>';inIngredients=false}
       if(inInstructions){html+='</ol>';inInstructions=false}
       var macroVal=line.replace(/^macros:\s*/i,'').trim();
-      if(macroVal)html+='<div class="meal-macros">Macros: '+macroVal+'</div>';
+      if(macroVal) html+='<div class="meal-macros">Macros: '+macroVal+'</div>';
       continue;
     }
     if(inDay&&/^prep time:/i.test(line)){
       html+='<div class="meal-prep">'+line+'</div>';continue;
     }
+
+    // ── Grocery list ──
     if(inGrocery&&!groceryDone){
       var UPL=UP.replace(/:\s*$/,'').trim();
       var isS=GSECTIONS.some(function(s){return UPL===s||UPL.startsWith(s)});
       if(isS){
         currentSection=line.replace(/:\s*$/,'').trim();
-        if(!grocerySections[currentSection])grocerySections[currentSection]=[];
+        if(!grocerySections[currentSection]) grocerySections[currentSection]=[];
       } else if(/^[•*\-]/.test(line)&&currentSection){
         grocerySections[currentSection].push(line.replace(/^[•*\-]\s*/,'').trim());
       } else if(/estimated total/i.test(line)){
@@ -557,23 +623,26 @@ function parsePlan(text){
       }
       continue;
     }
+
+    // ── Tips ──
     if(inTips&&/^\d+[.)]\s/.test(line)){
       tipCount++;
       html+='<div class="tip-item"><div class="tip-num">'+tipCount+'</div><div class="tip-text">'+line.replace(/^\d+[.)]\s*/,'').trim()+'</div></div>';
     }
   }
-  if(inIngredients)html+='</ul>';
-  if(inInstructions)html+='</ol>';
-  if(inDay)html+='</div>';
+
+  if(inIngredients) html+='</ul>';
+  if(inInstructions) html+='</ol>';
+  if(inDay) html+='</div>';
   if(inGrocery&&!groceryDone&&Object.keys(grocerySections).length>0){html+=renderGrocery(grocerySections)+'</div>';}
-  if(inTips)html+='</div>';
+  if(inTips) html+='</div>';
   return html;
 }
 
 function renderGrocery(sections){
   var html='';
   Object.keys(sections).forEach(function(s){
-    var items=sections[s];if(!items||!items.length)return;
+    var items=sections[s];if(!items||!items.length) return;
     html+='<div class="grocery-section"><div class="grocery-section-title">'+s+'</div><ul class="grocery-list">';
     items.forEach(function(item){html+='<li>'+item+'</li>'});
     html+='</ul></div>';
@@ -625,6 +694,7 @@ async function handleSubmit(e){
   var goalEl=document.querySelector('input[name=goal]:checked');
   var macroEl=document.querySelector('input[name=macro]:checked');
   if(!goalEl||!macroEl){alert('Please select a goal and macro style.');return}
+
   var clientData={
     name:document.getElementById('name').value,
     email:document.getElementById('email').value,
@@ -633,7 +703,8 @@ async function handleSubmit(e){
     height:document.getElementById('height').value,
     weight:document.getElementById('weight').value,
     activity:document.getElementById('activity').value,
-    goal:goalEl.value,macro:macroEl.value,
+    goal:goalEl.value,
+    macro:macroEl.value,
     household:document.getElementById('household').value,
     meals:document.getElementById('meals').value,
     days:document.getElementById('days').value,
@@ -644,18 +715,24 @@ async function handleSubmit(e){
     mealRepeat:document.getElementById('mealRepeat').value,
     tracking:document.getElementById('tracking').value,
     hardAllergies:document.getElementById('hardAllergies').value,
-    restrictions:restrictions,cuisine:cuisine,
+    restrictions:restrictions,
+    cuisine:cuisine,
     skill:document.getElementById('skill').value,
     dislikes:document.getElementById('dislikes').value,
     notes:document.getElementById('notes').value,
     healthContext:document.getElementById('healthContext').value,
     calorieTarget:document.getElementById('calorieTarget').value||''
   };
+
   showLoading();
   try{
-    var res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientData:clientData})});
+    var res=await fetch('/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clientData:clientData})
+    });
     var data=await res.json();
-    if(!res.ok||data.error)throw new Error(data.error||'Generation failed');
+    if(!res.ok||data.error) throw new Error(data.error||'Generation failed');
     showResults(data.plan,clientData);
   }catch(err){showError(err.message)}
 }
