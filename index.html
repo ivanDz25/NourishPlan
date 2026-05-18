@@ -121,7 +121,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
   <div class="nav-logo">Nourish<span>Plan</span></div>
   <div class="nav-tag">Free first week</div>
 </nav>
-  
+
 <section class="hero">
   <span class="hero-eyebrow">Personalized weekly meal planning</span>
   <h1>Your meals. Your macros.<br><em>Your grocery list.</em></h1>
@@ -178,6 +178,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
           </select>
         </div>
         <div class="field"><label>ZIP Code</label>
+          <div class="hint">For local grocery pricing</div>
           <input type="text" id="zipCode" placeholder="e.g. 98371" maxlength="5" pattern="[0-9]{5}" inputmode="numeric"/>
         </div>
       </div>
@@ -244,7 +245,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         <label>Weekly grocery budget</label>
         <div class="budget-row">
           <div class="budget-val" id="budgetDisplay">$150</div>
-          <input type="range" id="budgetSlider" min="40" max="500" step="10" value="150" oninput="updateBudget(this.value)"/>
+          <input type="range" id="budgetSlider" min="40" max="500" step="10" value="150"/>
           <div style="font-size:12px;color:var(--muted)">$500</div>
         </div>
       </div>
@@ -391,38 +392,41 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
 <footer>NourishPlan - No groceries sold - No spam - Cancel anytime</footer>
 
 <script>
-function updateBudget(v){document.getElementById('budgetDisplay').textContent='$'+v}
-
-var FORM_FIELDS=['name','email','age','sex','height','zipCode','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget'];
-
-function saveFormState(){
-  try{
-    var s={};
-    FORM_FIELDS.forEach(function(id){var el=document.getElementById(id);if(el)s[id]=el.value});
-    s.budget=document.getElementById('budgetSlider').value;
-    var g=document.querySelector('input[name=goal]:checked');
-    var m=document.querySelector('input[name=macro]:checked');
-    s.goal=g?g.value:'';s.macro=m?m.value:'';
-    s.restrictions=Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x){return x.value});
-    s.cuisine=Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x){return x.value});
-    s.proteins=Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x){return x.value});
-    s.equipment=Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x){return x.value});
-    localStorage.setItem('np_form',JSON.stringify(s));
-  }catch(e){}
+function updateBudget(v) {
+  document.getElementById('budgetDisplay').textContent = '$' + v;
 }
 
-function loadFormState(){
-  try{
-    var s=JSON.parse(localStorage.getItem('np_form')||'{}');
-    FORM_FIELDS.forEach(function(id){var el=document.getElementById(id);if(el&&s[id])el.value=s[id]});
-    if(s.budget){document.getElementById('budgetSlider').value=s.budget;updateBudget(s.budget)}
-    if(s.goal){var g=document.querySelector('input[name=goal][value="'+s.goal+'"]');if(g)g.checked=true}
-    if(s.macro){var m=document.querySelector('input[name=macro][value="'+s.macro+'"]');if(m)m.checked=true}
-    (s.restrictions||[]).forEach(function(v){var el=document.querySelector('input[name=restrictions][value="'+v+'"]');if(el)el.checked=true});
-    (s.cuisine||[]).forEach(function(v){var el=document.querySelector('input[name=cuisine][value="'+v+'"]');if(el)el.checked=true});
-    (s.proteins||[]).forEach(function(v){var el=document.querySelector('input[name=proteins][value="'+v+'"]');if(el)el.checked=true});
-    (s.equipment||[]).forEach(function(v){var el=document.querySelector('input[name=equipment][value="'+v+'"]');if(el)el.checked=true});
-  }catch(e){}
+var FORM_FIELDS = ['name','email','age','sex','height','weight','activity','zipCode','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget'];
+
+function saveFormState() {
+  try {
+    var s = {};
+    FORM_FIELDS.forEach(function(id) { var el = document.getElementById(id); if (el) s[id] = el.value; });
+    s.budget = document.getElementById('budgetSlider').value;
+    var g = document.querySelector('input[name=goal]:checked');
+    var m = document.querySelector('input[name=macro]:checked');
+    s.goal = g ? g.value : '';
+    s.macro = m ? m.value : '';
+    s.restrictions = Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x) { return x.value; });
+    s.cuisine = Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x) { return x.value; });
+    s.proteins = Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x) { return x.value; });
+    s.equipment = Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x) { return x.value; });
+    localStorage.setItem('np_form', JSON.stringify(s));
+  } catch(e) {}
+}
+
+function loadFormState() {
+  try {
+    var s = JSON.parse(localStorage.getItem('np_form') || '{}');
+    FORM_FIELDS.forEach(function(id) { var el = document.getElementById(id); if (el && s[id]) el.value = s[id]; });
+    if (s.budget) { document.getElementById('budgetSlider').value = s.budget; updateBudget(s.budget); }
+    if (s.goal) { var g = document.querySelector('input[name=goal][value="' + s.goal + '"]'); if (g) g.checked = true; }
+    if (s.macro) { var m = document.querySelector('input[name=macro][value="' + s.macro + '"]'); if (m) m.checked = true; }
+    (s.restrictions || []).forEach(function(v) { var el = document.querySelector('input[name=restrictions][value="' + v + '"]'); if (el) el.checked = true; });
+    (s.cuisine || []).forEach(function(v) { var el = document.querySelector('input[name=cuisine][value="' + v + '"]'); if (el) el.checked = true; });
+    (s.proteins || []).forEach(function(v) { var el = document.querySelector('input[name=proteins][value="' + v + '"]'); if (el) el.checked = true; });
+    (s.equipment || []).forEach(function(v) { var el = document.querySelector('input[name=equipment][value="' + v + '"]'); if (el) el.checked = true; });
+  } catch(e) {}
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -433,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('mealForm').addEventListener('change', saveFormState);
 });
 
-var LOADING_MSGS=[
+var LOADING_MSGS = [
   'Calculating your daily calorie target...',
   'Setting protein, carb, and fat targets...',
   'Selecting meals that fit your budget...',
@@ -443,20 +447,23 @@ var LOADING_MSGS=[
   'Finalizing your plan...'
 ];
 
-function showLoading(){
-  document.getElementById('form-section').style.display='none';
-  document.getElementById('results-section').style.display='none';
-  document.getElementById('loading-section').style.display='block';
-  var c=document.getElementById('loadingSteps');c.innerHTML='';
-  LOADING_MSGS.forEach(function(msg,i){
-    var el=document.createElement('div');el.className='loading-step';
-    el.textContent='-> '+msg;el.style.animationDelay=(i*0.6)+'s';c.appendChild(el);
+function showLoading() {
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('loading-section').style.display = 'block';
+  var c = document.getElementById('loadingSteps');
+  c.innerHTML = '';
+  LOADING_MSGS.forEach(function(msg, i) {
+    var el = document.createElement('div');
+    el.className = 'loading-step';
+    el.textContent = '-> ' + msg;
+    el.style.animationDelay = (i * 0.6) + 's';
+    c.appendChild(el);
   });
 }
 
-var MEAL_LABELS=['BREAKFAST','LUNCH','DINNER','SNACK','MEAL 1','MEAL 2','MEAL 3','MEAL 4','MEAL 5'];
+var MEAL_LABELS = ['BREAKFAST','LUNCH','DINNER','SNACK','MEAL 1','MEAL 2','MEAL 3','MEAL 4','MEAL 5'];
 
-// Lines that look like AI reasoning — filtered server-side AND client-side as a safety net
 function isReasoningLine(line) {
   var t = line.trim();
   if (!t) return false;
@@ -475,275 +482,264 @@ function isReasoningLine(line) {
   );
 }
 
-function parsePlan(text){
+function parsePlan(text) {
   var lines = text.split('\n');
   var html = '';
-  var inDay=false, inGrocery=false, inTips=false, inMacro=false;
-  var inIngredients=false, inInstructions=false, groceryDone=false;
-  var grocerySections={}, currentSection=null, tipCount=0;
-  var dayMealCount=0;
-  // Deduplication: track which meal labels have been seen in the current day
-  var seenMealLabels={};
+  var inDay = false, inGrocery = false, inTips = false, inMacro = false;
+  var inIngredients = false, inInstructions = false, groceryDone = false;
+  var grocerySections = {}, currentSection = null, tipCount = 0;
+  var dayMealCount = 0;
+  var seenMealLabels = {};
 
-  var GSECTIONS=['PRODUCE','PROTEIN & MEAT','PROTEIN AND MEAT','DAIRY & EGGS','DAIRY AND EGGS','PANTRY & DRY GOODS','PANTRY AND DRY GOODS','FROZEN'];
+  var GSECTIONS = ['PRODUCE','PROTEIN & MEAT','PROTEIN AND MEAT','DAIRY & EGGS','DAIRY AND EGGS','PANTRY & DRY GOODS','PANTRY AND DRY GOODS','FROZEN'];
 
-  for(var i=0;i<lines.length;i++){
-    var line=lines[i].trim();
-    if(!line||/^[=\-]{3,}$/.test(line)) continue;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || /^[=\-]{3,}$/.test(line)) continue;
+    if (isReasoningLine(line)) continue;
 
-    // Skip AI reasoning lines (client-side safety net)
-    if(isReasoningLine(line)) continue;
+    var UP = line.toUpperCase();
 
-    var UP=line.toUpperCase();
-
-    // ── Section headers ──
-    if(/^CALORIE.*MACRO/i.test(line)){
-      if(inDay){html+='</div>';inDay=false}
-      inMacro=true;inGrocery=false;inTips=false;
-      html+='<div class="plan-section-label">Calorie & Macro Targets</div><div class="macro-card">';
+    if (/^CALORIE.*MACRO/i.test(line)) {
+      if (inDay) { html += '</div>'; inDay = false; }
+      inMacro = true; inGrocery = false; inTips = false;
+      html += '<div class="plan-section-label">Calorie & Macro Targets</div><div class="macro-card">';
       continue;
     }
-    if(/WEEKLY GROCERY LIST|^GROCERY LIST$/i.test(UP)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      if(inDay){html+='</div>';inDay=false}
-      inMacro=false;inGrocery=true;inTips=false;groceryDone=false;
-      html+='<div class="plan-section-label">Weekly Grocery List</div><div class="grocery-grid">';
+    if (/WEEKLY GROCERY LIST|^GROCERY LIST$/i.test(UP)) {
+      if (inIngredients) { html += '</ul>'; inIngredients = false; }
+      if (inInstructions) { html += '</ol>'; inInstructions = false; }
+      if (inDay) { html += '</div>'; inDay = false; }
+      inMacro = false; inGrocery = true; inTips = false; groceryDone = false;
+      html += '<div class="plan-section-label">Weekly Grocery List</div><div class="grocery-grid">';
       continue;
     }
-    if(/^MEAL PREP TIPS$|^PREP TIPS$/i.test(UP)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      if(inDay){html+='</div>';inDay=false}
-      if(inGrocery&&!groceryDone){html+=renderGrocery(grocerySections)+'</div>';groceryDone=true}
-      inMacro=false;inGrocery=false;inTips=true;tipCount=0;
-      html+='<div class="plan-section-label">Meal Prep Tips</div><div class="tips-card">';
+    if (/^MEAL PREP TIPS$|^PREP TIPS$/i.test(UP)) {
+      if (inIngredients) { html += '</ul>'; inIngredients = false; }
+      if (inInstructions) { html += '</ol>'; inInstructions = false; }
+      if (inDay) { html += '</div>'; inDay = false; }
+      if (inGrocery && !groceryDone) { html += renderGrocery(grocerySections) + '</div>'; groceryDone = true; }
+      inMacro = false; inGrocery = false; inTips = true; tipCount = 0;
+      html += '<div class="plan-section-label">Meal Prep Tips</div><div class="tips-card">';
       continue;
     }
 
-    // ── Macro card content ──
-    if(inMacro){
-      if(/^daily (calorie|cal)/i.test(line)){
-        var cal=line.replace(/^daily (calorie[s]?|cal)[^:]*:\s*/i,'').trim();
-        html+='<div class="macro-row"><span class="macro-key">Daily Calories</span><span class="macro-val">'+cal+'</span></div><div class="macro-pills">';
-      } else if(/^protein:/i.test(line)){
-        line.split('|').forEach(function(p){
-          p=p.trim();var ci=p.indexOf(':');
-          var lbl=ci>=0?p.substring(0,ci).trim():p;
-          var val=ci>=0?p.substring(ci+1).trim():p;
-          html+='<div class="macro-pill"><div class="mp-val">'+val+'</div><div class="mp-lbl">'+lbl+'</div></div>';
+    if (inMacro) {
+      if (/^daily (calorie|cal)/i.test(line)) {
+        var cal = line.replace(/^daily (calorie[s]?|cal)[^:]*:\s*/i, '').trim();
+        html += '<div class="macro-row"><span class="macro-key">Daily Calories</span><span class="macro-val">' + cal + '</span></div><div class="macro-pills">';
+      } else if (/^protein:/i.test(line)) {
+        line.split('|').forEach(function(p) {
+          p = p.trim(); var ci = p.indexOf(':');
+          var lbl = ci >= 0 ? p.substring(0, ci).trim() : p;
+          var val = ci >= 0 ? p.substring(ci + 1).trim() : p;
+          html += '<div class="macro-pill"><div class="mp-val">' + val + '</div><div class="mp-lbl">' + lbl + '</div></div>';
         });
-        html+='</div>';
-      } else if(/^(strategy|context)/i.test(line)){
-        html+='<div class="strategy-note">'+line.replace(/^(strategy|context)[^:]*:\s*/i,'').trim()+'</div></div>';
-        inMacro=false;
+        html += '</div>';
+      } else if (/^(strategy|context)/i.test(line)) {
+        html += '<div class="strategy-note">' + line.replace(/^(strategy|context)[^:]*:\s*/i, '').trim() + '</div></div>';
+        inMacro = false;
       }
       continue;
     }
 
-    // ── Day header ──
-    if(/^DAY\s+\d+/i.test(line)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      if(inDay){html+='</div>'}
-      inDay=true;dayMealCount=0;seenMealLabels={};
-      html+='<div class="day-card"><div class="day-header">'+line+'</div>';
+    if (/^DAY\s+\d+/i.test(line)) {
+      if (inIngredients) { html += '</ul>'; inIngredients = false; }
+      if (inInstructions) { html += '</ol>'; inInstructions = false; }
+      if (inDay) { html += '</div>'; }
+      inDay = true; dayMealCount = 0; seenMealLabels = {};
+      html += '<div class="day-card"><div class="day-header">' + line + '</div>';
       continue;
     }
 
-    // ── Inside a day ──
-    if(inDay){
-      var cleanLine=line.replace(/\s*:.*$/,'').trim().toUpperCase();
-      var isMealLabel=MEAL_LABELS.indexOf(cleanLine)>=0;
+    if (inDay) {
+      var cleanLine = line.replace(/\s*:.*$/, '').trim().toUpperCase();
+      var isMealLabel = MEAL_LABELS.indexOf(cleanLine) >= 0;
 
-      if(isMealLabel){
-        // DEDUPLICATION: skip if we've already seen this label today
-        if(seenMealLabels[cleanLine]){
-          continue;
-        }
-        seenMealLabels[cleanLine]=true;
-
-        var dishName='';
-        var colonIdx=line.indexOf(':');
-        if(colonIdx>=0){dishName=line.substring(colonIdx+1).trim()}
-        if(inIngredients){html+='</ul>';inIngredients=false}
-        if(inInstructions){html+='</ol>';inInstructions=false}
-        if(dayMealCount>0) html+='<hr class="meal-divider">';
+      if (isMealLabel) {
+        if (seenMealLabels[cleanLine]) continue;
+        seenMealLabels[cleanLine] = true;
+        var dishName = '';
+        var colonIdx = line.indexOf(':');
+        if (colonIdx >= 0) { dishName = line.substring(colonIdx + 1).trim(); }
+        if (inIngredients) { html += '</ul>'; inIngredients = false; }
+        if (inInstructions) { html += '</ol>'; inInstructions = false; }
+        if (dayMealCount > 0) html += '<hr class="meal-divider">';
         dayMealCount++;
-        html+='<div class="meal-type-label">'+cleanLine+'</div>';
-        if(dishName) html+='<div class="meal-title">'+dishName+'</div>';
+        html += '<div class="meal-type-label">' + cleanLine + '</div>';
+        if (dishName) html += '<div class="meal-title">' + dishName + '</div>';
         continue;
       }
 
-      // Dish name detection
-      var isDishName=!inIngredients&&!inInstructions&&dayMealCount>0&&
-        /^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line)&&line.length>5&&line.length<100&&
+      var isDishName = !inIngredients && !inInstructions && dayMealCount > 0 &&
+        /^[A-Z][a-zA-Z\s,\-&'()]+$/.test(line) && line.length > 5 && line.length < 100 &&
         !/^(DAY|INGREDIENTS|INSTRUCTIONS|MACROS|PREP TIME|WEEKLY|MEAL PREP|CALORIE|PROTEIN|CARBS|FAT)/i.test(line);
-      if(isDishName){
-        if(inIngredients){html+='</ul>';inIngredients=false}
-        if(inInstructions){html+='</ol>';inInstructions=false}
-        html+='<div class="meal-title">'+line+'</div>';
+      if (isDishName) {
+        if (inIngredients) { html += '</ul>'; inIngredients = false; }
+        if (inInstructions) { html += '</ol>'; inInstructions = false; }
+        html += '<div class="meal-title">' + line + '</div>';
         continue;
       }
     }
 
-    if(inDay&&/^ingredients:?$/i.test(line)){
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      if(inIngredients){html+='</ul>';}
-      html+='<div class="ingredients-label">Ingredients</div><ul class="ingredients-list">';
-      inIngredients=true;continue;
+    if (inDay && /^ingredients:?$/i.test(line)) {
+      if (inInstructions) { html += '</ol>'; inInstructions = false; }
+      if (inIngredients) { html += '</ul>'; }
+      html += '<div class="ingredients-label">Ingredients</div><ul class="ingredients-list">';
+      inIngredients = true; continue;
     }
-    if(inIngredients&&/^[•*\-]/.test(line)){
-      html+='<li>'+line.replace(/^[•*\-]\s*/,'').trim()+'</li>';continue;
+    if (inIngredients && /^[•*\-]/.test(line)) {
+      html += '<li>' + line.replace(/^[•*\-]\s*/, '').trim() + '</li>'; continue;
     }
-    if(inDay&&/^instructions:?$/i.test(line)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
-      html+='<div class="instructions-label">Instructions</div><ol class="instructions-list">';
-      inInstructions=true;continue;
+    if (inDay && /^instructions:?$/i.test(line)) {
+      if (inIngredients) { html += '</ul>'; inIngredients = false; }
+      html += '<div class="instructions-label">Instructions</div><ol class="instructions-list">';
+      inInstructions = true; continue;
     }
-    if(inInstructions&&/^\d+[.)]\s/.test(line)){
-      html+='<li>'+line.replace(/^\d+[.)]\s*/,'').trim()+'</li>';continue;
+    if (inInstructions && /^\d+[.)]\s/.test(line)) {
+      html += '<li>' + line.replace(/^\d+[.)]\s*/, '').trim() + '</li>'; continue;
     }
-    if(inDay&&/^macros:/i.test(line)){
-      if(inIngredients){html+='</ul>';inIngredients=false}
-      if(inInstructions){html+='</ol>';inInstructions=false}
-      var macroVal=line.replace(/^macros:\s*/i,'').trim();
-      if(macroVal) html+='<div class="meal-macros">Macros: '+macroVal+'</div>';
+    if (inDay && /^macros:/i.test(line)) {
+      if (inIngredients) { html += '</ul>'; inIngredients = false; }
+      if (inInstructions) { html += '</ol>'; inInstructions = false; }
+      var macroVal = line.replace(/^macros:\s*/i, '').trim();
+      if (macroVal) html += '<div class="meal-macros">Macros: ' + macroVal + '</div>';
       continue;
     }
-    if(inDay&&/^prep time:/i.test(line)){
-      html+='<div class="meal-prep">'+line+'</div>';continue;
+    if (inDay && /^prep time:/i.test(line)) {
+      html += '<div class="meal-prep">' + line + '</div>'; continue;
     }
 
-    // ── Grocery list ──
-    if(inGrocery&&!groceryDone){
-      var UPL=UP.replace(/:\s*$/,'').trim();
-      var isS=GSECTIONS.some(function(s){return UPL===s||UPL.startsWith(s)});
-      if(isS){
-        currentSection=line.replace(/:\s*$/,'').trim();
-        if(!grocerySections[currentSection]) grocerySections[currentSection]=[];
-      } else if(/^[•*\-]/.test(line)&&currentSection){
-        grocerySections[currentSection].push(line.replace(/^[•*\-]\s*/,'').trim());
-      } else if(/estimated total/i.test(line)){
-        html+=renderGrocery(grocerySections)+'</div>';
-        html+='<div class="grocery-total">'+line+'</div>';
-        groceryDone=true;inGrocery=false;
+    if (inGrocery && !groceryDone) {
+      var UPL = UP.replace(/:\s*$/, '').trim();
+      var isS = GSECTIONS.some(function(s) { return UPL === s || UPL.startsWith(s); });
+      if (isS) {
+        currentSection = line.replace(/:\s*$/, '').trim();
+        if (!grocerySections[currentSection]) grocerySections[currentSection] = [];
+      } else if (/^[•*\-]/.test(line) && currentSection) {
+        grocerySections[currentSection].push(line.replace(/^[•*\-]\s*/, '').trim());
+      } else if (/estimated total/i.test(line)) {
+        html += renderGrocery(grocerySections) + '</div>';
+        html += '<div class="grocery-total">' + line + '</div>';
+        groceryDone = true; inGrocery = false;
       }
       continue;
     }
 
-    // ── Tips ──
-    if(inTips&&/^\d+[.)]\s/.test(line)){
+    if (inTips && /^\d+[.)]\s/.test(line)) {
       tipCount++;
-      html+='<div class="tip-item"><div class="tip-num">'+tipCount+'</div><div class="tip-text">'+line.replace(/^\d+[.)]\s*/,'').trim()+'</div></div>';
+      html += '<div class="tip-item"><div class="tip-num">' + tipCount + '</div><div class="tip-text">' + line.replace(/^\d+[.)]\s*/, '').trim() + '</div></div>';
     }
   }
 
-  if(inIngredients) html+='</ul>';
-  if(inInstructions) html+='</ol>';
-  if(inDay) html+='</div>';
-  if(inGrocery&&!groceryDone&&Object.keys(grocerySections).length>0){html+=renderGrocery(grocerySections)+'</div>';}
-  if(inTips) html+='</div>';
+  if (inIngredients) html += '</ul>';
+  if (inInstructions) html += '</ol>';
+  if (inDay) html += '</div>';
+  if (inGrocery && !groceryDone && Object.keys(grocerySections).length > 0) { html += renderGrocery(grocerySections) + '</div>'; }
+  if (inTips) html += '</div>';
   return html;
 }
 
-function renderGrocery(sections){
-  var html='';
-  Object.keys(sections).forEach(function(s){
-    var items=sections[s];if(!items||!items.length) return;
-    html+='<div class="grocery-section"><div class="grocery-section-title">'+s+'</div><ul class="grocery-list">';
-    items.forEach(function(item){html+='<li>'+item+'</li>'});
-    html+='</ul></div>';
+function renderGrocery(sections) {
+  var html = '';
+  Object.keys(sections).forEach(function(s) {
+    var items = sections[s]; if (!items || !items.length) return;
+    html += '<div class="grocery-section"><div class="grocery-section-title">' + s + '</div><ul class="grocery-list">';
+    items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+    html += '</ul></div>';
   });
   return html;
 }
 
-function showResults(plan,clientData){
-  document.getElementById('loading-section').style.display='none';
-  document.getElementById('results-section').style.display='block';
-  document.getElementById('results-section').dataset.rawPlan=plan;
-  document.getElementById('plan-output').innerHTML=parsePlan(plan);
-  if(clientData&&clientData.email){
-    var n=document.getElementById('email-note');
-    n.textContent='A copy has been sent to '+clientData.email;
-    n.style.display='block';
+function showResults(plan, clientData) {
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('results-section').dataset.rawPlan = plan;
+  document.getElementById('plan-output').innerHTML = parsePlan(plan);
+  if (clientData && clientData.email) {
+    var n = document.getElementById('email-note');
+    n.textContent = 'A copy has been sent to ' + clientData.email;
+    n.style.display = 'block';
   }
-  document.getElementById('results-section').scrollIntoView({behavior:'smooth'});
+  document.getElementById('results-section').scrollIntoView({behavior: 'smooth'});
 }
 
-function showError(msg){
-  document.getElementById('loading-section').style.display='none';
-  document.getElementById('form-section').style.display='block';
-  var b=document.getElementById('error-banner');b.textContent='Error: '+msg;b.style.display='block';
-  document.getElementById('form-section').scrollIntoView({behavior:'smooth'});
+function showError(msg) {
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('form-section').style.display = 'block';
+  var b = document.getElementById('error-banner');
+  b.textContent = 'Error: ' + msg;
+  b.style.display = 'block';
+  document.getElementById('form-section').scrollIntoView({behavior: 'smooth'});
 }
 
-function startOver(){
-  document.getElementById('results-section').style.display='none';
-  document.getElementById('form-section').style.display='block';
-  document.getElementById('error-banner').style.display='none';
-  window.scrollTo({top:0,behavior:'smooth'});
+function startOver() {
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('form-section').style.display = 'block';
+  document.getElementById('error-banner').style.display = 'none';
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-function copyPlan(){
-  var raw=document.getElementById('results-section').dataset.rawPlan||'';
-  navigator.clipboard.writeText(raw).then(function(){
-    var b=document.getElementById('copyBtn');b.textContent='Copied!';
-    setTimeout(function(){b.textContent='Copy text'},1500);
+function copyPlan() {
+  var raw = document.getElementById('results-section').dataset.rawPlan || '';
+  navigator.clipboard.writeText(raw).then(function() {
+    var b = document.getElementById('copyBtn');
+    b.textContent = 'Copied!';
+    setTimeout(function() { b.textContent = 'Copy text'; }, 1500);
   });
 }
 
-async function handleSubmit(e){
+async function handleSubmit(e) {
   e.preventDefault();
-  var restrictions=Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x){return x.value}).join(', ')||'None';
-  var cuisine=Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x){return x.value}).join(', ')||'No preference';
-  var proteins=Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x){return x.value}).join(', ')||'No preference';
-  var equipment=Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x){return x.value}).join(', ')||'Standard kitchen';
-  var goalEl=document.querySelector('input[name=goal]:checked');
-  var macroEl=document.querySelector('input[name=macro]:checked');
-  if(!goalEl||!macroEl){alert('Please select a goal and macro style.');return}
+  var restrictions = Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x) { return x.value; }).join(', ') || 'None';
+  var cuisine = Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x) { return x.value; }).join(', ') || 'No preference';
+  var proteins = Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x) { return x.value; }).join(', ') || 'No preference';
+  var equipment = Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x) { return x.value; }).join(', ') || 'Standard kitchen';
+  var goalEl = document.querySelector('input[name=goal]:checked');
+  var macroEl = document.querySelector('input[name=macro]:checked');
+  if (!goalEl || !macroEl) { alert('Please select a goal and macro style.'); return; }
 
-  var clientData={
-    name:document.getElementById('name').value,
-    email:document.getElementById('email').value,
-    age:document.getElementById('age').value,
-    sex:document.getElementById('sex').value,
-    height:document.getElementById('height').value,
-    weight:document.getElementById('weight').value,
-    activity:document.getElementById('activity').value,
-    goal:goalEl.value,
-    macro:macroEl.value,
-    household:document.getElementById('household').value,
-    meals:document.getElementById('meals').value,
-    days:document.getElementById('days').value,
-    budget:'$'+document.getElementById('budgetSlider').value,
-    proteins:proteins,
-    equipment:equipment,
-    biggestMeal:document.getElementById('biggestMeal').value,
-    mealRepeat:document.getElementById('mealRepeat').value,
-    tracking:document.getElementById('tracking').value,
-    hardAllergies:document.getElementById('hardAllergies').value,
-    restrictions:restrictions,
-    cuisine:cuisine,
-    skill:document.getElementById('skill').value,
-    dislikes:document.getElementById('dislikes').value,
-    notes:document.getElementById('notes').value,
-    healthContext:document.getElementById('healthContext').value,
-    calorieTarget:document.getElementById('calorieTarget').value||''
+  var clientData = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+    age: document.getElementById('age').value,
+    sex: document.getElementById('sex').value,
+    height: document.getElementById('height').value,
+    weight: document.getElementById('weight').value,
+    activity: document.getElementById('activity').value,
     zipCode: document.getElementById('zipCode').value || '',
+    goal: goalEl.value,
+    macro: macroEl.value,
+    household: document.getElementById('household').value,
+    meals: document.getElementById('meals').value,
+    days: document.getElementById('days').value,
+    budget: '$' + document.getElementById('budgetSlider').value,
+    proteins: proteins,
+    equipment: equipment,
+    biggestMeal: document.getElementById('biggestMeal').value,
+    mealRepeat: document.getElementById('mealRepeat').value,
+    tracking: document.getElementById('tracking').value,
+    hardAllergies: document.getElementById('hardAllergies').value,
+    restrictions: restrictions,
+    cuisine: cuisine,
+    skill: document.getElementById('skill').value,
+    dislikes: document.getElementById('dislikes').value,
+    notes: document.getElementById('notes').value,
+    healthContext: document.getElementById('healthContext').value,
+    calorieTarget: document.getElementById('calorieTarget').value || ''
   };
 
   showLoading();
-  try{
-    var res=await fetch('/generate',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({clientData:clientData})
+  try {
+    var res = await fetch('/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({clientData: clientData})
     });
-    var data=await res.json();
-    if(!res.ok||data.error) throw new Error(data.error||'Generation failed');
-    showResults(data.plan,clientData);
-  }catch(err){showError(err.message)}
+    var data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Generation failed');
+    showResults(data.plan, clientData);
+  } catch(err) { showError(err.message); }
 }
 </script>
 </body>
