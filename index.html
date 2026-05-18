@@ -121,12 +121,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
   <div class="nav-logo">Nourish<span>Plan</span></div>
   <div class="nav-tag">Free first week</div>
 </nav>
-
-  <div class="field">
-  <label>ZIP Code</label>
-  <div class="hint">Used to estimate local grocery prices for your area</div>
-  <input type="text" id="zipCode" placeholder="e.g. 98371" maxlength="5" pattern="[0-9]{5}" inputmode="numeric"/>
-</div>
   
 <section class="hero">
   <span class="hero-eyebrow">Personalized weekly meal planning</span>
@@ -172,7 +166,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
         <div class="field"><label>Sex</label><select id="sex"><option>Male</option><option>Female</option></select></div>
         <div class="field"><label>Weight (lbs)</label><input type="number" id="weight" placeholder="185" required/></div>
       </div>
-      <div class="grid2">
+      <div class="grid3">
         <div class="field"><label>Height</label><input type="text" id="height" placeholder="5'10&quot;" required/></div>
         <div class="field"><label>Activity level</label>
           <select id="activity">
@@ -182,6 +176,10 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
             <option>Very active (6-7 workouts/week)</option>
             <option>Athlete / twice-a-day training</option>
           </select>
+        </div>
+        <div class="field"><label>ZIP Code</label>
+          <div class="hint">For local grocery pricing</div>
+          <input type="text" id="zipCode" placeholder="e.g. 98371" maxlength="5" pattern="[0-9]{5}" inputmode="numeric"/>
         </div>
       </div>
     </div>
