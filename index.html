@@ -122,6 +122,12 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
   <div class="nav-tag">Free first week</div>
 </nav>
 
+  <div class="field">
+  <label>ZIP Code</label>
+  <div class="hint">Used to estimate local grocery prices for your area</div>
+  <input type="text" id="zipCode" placeholder="e.g. 98371" maxlength="5" pattern="[0-9]{5}" inputmode="numeric"/>
+</div>
+  
 <section class="hero">
   <span class="hero-eyebrow">Personalized weekly meal planning</span>
   <h1>Your meals. Your macros.<br><em>Your grocery list.</em></h1>
@@ -390,7 +396,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
 <script>
 function updateBudget(v){document.getElementById('budgetDisplay').textContent='$'+v}
 
-var FORM_FIELDS=['name','email','age','sex','height','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget'];
+var FORM_FIELDS=['name','email','age','sex','height','zipCode','weight','activity','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget'];
 
 function saveFormState(){
   try{
@@ -722,6 +728,7 @@ async function handleSubmit(e){
     notes:document.getElementById('notes').value,
     healthContext:document.getElementById('healthContext').value,
     calorieTarget:document.getElementById('calorieTarget').value||''
+    zipCode: document.getElementById('zipCode').value || '',
   };
 
   showLoading();
