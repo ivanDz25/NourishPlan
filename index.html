@@ -425,8 +425,13 @@ function loadFormState(){
   }catch(e){}
 }
 
-document.addEventListener('DOMContentLoaded',loadFormState);
-document.getElementById('mealForm').addEventListener('change',saveFormState);
+document.addEventListener('DOMContentLoaded', function() {
+  loadFormState();
+  document.getElementById('budgetSlider').addEventListener('input', function() {
+    updateBudget(this.value);
+  });
+  document.getElementById('mealForm').addEventListener('change', saveFormState);
+});
 
 var LOADING_MSGS=[
   'Calculating your daily calorie target...',
