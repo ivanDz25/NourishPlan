@@ -241,7 +241,6 @@ function buildPrompt(d) {
     : d.goal && d.goal.toLowerCase().includes('bulk') ? tdee + 300
     : tdee;
 
-  // Explicit calorie field takes priority, then notes fallback
   if (d.calorieTarget && parseInt(d.calorieTarget) >= 800 && parseInt(d.calorieTarget) <= 5000) {
     goalCalories = parseInt(d.calorieTarget);
     console.log('Calorie override from form field:', goalCalories);
@@ -322,6 +321,10 @@ function buildPrompt(d) {
     (isLowCarb ? 'LOW CARB STRICT: Under 50g net carbs/day. Under 15g per meal. No rice, bread, pasta, oats, most beans.\n' : '');
 
   const userPrompt =
+    (d.zipCode
+  ? 'REGIONAL PRICING: User ZIP is ' + d.zipCode + '. Apply grocery pricing accurate for that region — factor in local cost of living, urban vs. rural differences, and stores likely available (e.g. Fred Meyer/Kroger, Safeway, Walmart, Aldi, regional chains). Scale the estimated grocery total to reflect what items actually cost in that market.\n\n'
+  : '') +
+'OUTPUT FORMAT RULE: ...'
     'OUTPUT FORMAT RULE: Use ONLY these section headers each day: ' + allowedLabels + '. ' + forbiddenNote + '\n' +
     'CRITICAL: Do NOT write any calculations, totals, or reasoning in the output. Meal plan content only.\n\n' +
     'Generate a complete ' + d.days + '-day meal plan.\n\n' +
@@ -329,7 +332,9 @@ function buildPrompt(d) {
     '- ' + (d.name || 'Client') + ' | Age: ' + d.age + ' | ' + d.sex + ' | ' + d.height + ' | ' + d.weight + ' lbs\n' +
     '- Activity: ' + d.activity + '\n' +
     '- Goal: ' + d.goal + ' | Macro style: ' + d.macro + '\n' +
-    '- Household: ' + d.household + ' person(s) | ' + d.days + ' days | Budget: ' + (d.budget || '$150') + '/wk\n\n' +
+    '- Household: ' + d.household + ' person(s) | ' + d.days + ' days | Budget: ' + (d.budget || '$150') + '/wk\n' +
+(d.zipCode ? '- Location ZIP: ' + d.zipCode + '\n' : '') +
+'\n' +
     'DAILY MEAL STRUCTURE: ' + allowedLabels + '\n' +
     'BIGGEST MEAL: ' + favoriteMeal + ' → ' + favCals + ' cal\n' +
     (mealCount > 1 ? 'OTHER MEALS: ' + otherCals + ' cal each\n' : '') +
