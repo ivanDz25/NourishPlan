@@ -50,11 +50,10 @@ app.post('/generate', async (req, res) => {
       .replace(/`{1,3}[^`]*`{1,3}/g, '')
       .replace(/^\s*[-*]\s+/gm, '- ');
 
-    // Strip ALL AI chain-of-thought / reasoning / calculation lines
+    // Strip AI chain-of-thought / reasoning / calculation lines
     text = text.split('\n').filter(function(line) {
       var t = line.trim();
-      if (!t) return true; // keep blank lines for spacing
-      var lower = t.toLowerCase();
+      if (!t) return true;
       return !(
         /^day\s+\d+\s*(total|check|verification)/i.test(t) ||
         /let me (reduce|adjust|recalculate|change|modify|lower|pick)/i.test(t) ||
@@ -208,7 +207,7 @@ function buildPrompt(d) {
       return label === 'SNACK' ? snackBlock : mealBlock(label);
     }).join('\n\n');
 
-  // ── Calorie math ──
+  // Calorie math
   const weight = parseFloat(d.weight) || 180;
   const age = parseFloat(d.age) || 30;
   const isMale = (d.sex || '').toLowerCase().includes('male');
@@ -280,7 +279,6 @@ function buildPrompt(d) {
     (labels.includes('DINNER') ? '' : 'DINNER is forbidden. ') +
     'Never use forbidden labels as section headers.';
 
-  // ── Diet enforcement strings ──
   const kosherRule = isKosher
     ? '\n8. KOSHER: NEVER combine meat or poultry with dairy on the same day. If any meal has meat, zero dairy that day. If snack has dairy, that day is meat-free.'
     : '';
@@ -322,9 +320,8 @@ function buildPrompt(d) {
 
   const userPrompt =
     (d.zipCode
-  ? 'REGIONAL PRICING: User ZIP is ' + d.zipCode + '. Apply grocery pricing accurate for that region — factor in local cost of living, urban vs. rural differences, and stores likely available (e.g. Fred Meyer/Kroger, Safeway, Walmart, Aldi, regional chains). Scale the estimated grocery total to reflect what items actually cost in that market.\n\n'
-  : '') +
-'OUTPUT FORMAT RULE: ...'
+      ? 'REGIONAL PRICING: User ZIP is ' + d.zipCode + '. Apply grocery pricing accurate for that region — factor in local cost of living, urban vs. rural differences, and stores likely available (e.g. Fred Meyer/Kroger, Safeway, Walmart, Aldi, regional chains). Scale the estimated grocery total to reflect what items actually cost in that market.\n\n'
+      : '') +
     'OUTPUT FORMAT RULE: Use ONLY these section headers each day: ' + allowedLabels + '. ' + forbiddenNote + '\n' +
     'CRITICAL: Do NOT write any calculations, totals, or reasoning in the output. Meal plan content only.\n\n' +
     'Generate a complete ' + d.days + '-day meal plan.\n\n' +
@@ -333,9 +330,8 @@ function buildPrompt(d) {
     '- Activity: ' + d.activity + '\n' +
     '- Goal: ' + d.goal + ' | Macro style: ' + d.macro + '\n' +
     '- Household: ' + d.household + ' person(s) | ' + d.days + ' days | Budget: ' + (d.budget || '$150') + '/wk\n' +
-(d.zipCode ? '- Location ZIP: ' + d.zipCode + '\n' : '') +
-'\n' +
-    'DAILY MEAL STRUCTURE: ' + allowedLabels + '\n' +
+    (d.zipCode ? '- Location ZIP: ' + d.zipCode + '\n' : '') +
+    '\nDAILY MEAL STRUCTURE: ' + allowedLabels + '\n' +
     'BIGGEST MEAL: ' + favoriteMeal + ' → ' + favCals + ' cal\n' +
     (mealCount > 1 ? 'OTHER MEALS: ' + otherCals + ' cal each\n' : '') +
     (hasSnack ? 'SNACK: 200 cal, no cooking\n' : '') +
