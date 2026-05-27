@@ -397,6 +397,7 @@ function updateBudget(v) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  localStorage.removeItem('np_form');
   document.getElementById('budgetSlider').addEventListener('input', function() {
     updateBudget(this.value);
   });
