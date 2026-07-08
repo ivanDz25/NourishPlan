@@ -291,6 +291,23 @@ function buildPrompt(d) {
     ? '\n10. LOW CARB — HARD LIMIT: Total net carbs per day must stay UNDER 50g. Avoid: rice, bread, pasta, oats, most beans, most fruit. Allowed: leafy greens, zucchini, broccoli, cauliflower, cucumber, bell pepper, nuts, seeds, avocado, tofu, tempeh, edamame. Each meal must stay under 15g net carbs.'
     : '';
 
+  const isBeginnerSkill = (d.skill || '').toLowerCase().includes('beginner');
+  const isIntermediateSkill = (d.skill || '').toLowerCase().includes('intermediate');
+
+  const skillRule = isBeginnerSkill
+    ? '\n11. BEGINNER INSTRUCTION LIMITS: Max 6 instruction steps per recipe. Each step is ONE single action only (no "while X, also do Y" simultaneous steps). Prep time estimate must include ALL prep — chopping, measuring, marinating — not just active cooking time. No unfamiliar techniques (no julienning, no tempering, no reductions) unless explained in one plain sentence within the step itself. Round stated prep times UP, never down.'
+    : (isIntermediateSkill
+      ? '\n11. INTERMEDIATE INSTRUCTION LIMITS: Max 9 instruction steps per recipe. Simultaneous steps allowed only if explicitly called out ("while rice cooks..."). Prep time must include all hands-on prep, not just active cooking.'
+      : '');
+
+  const familiarMealsRule = (d.familiarMeals && d.familiarMeals.trim())
+    ? '\n12. FAMILIAR MEALS ANCHOR: The client already cooks and likes these meals regularly: ' + d.familiarMeals.trim() + '. At least half of the dinners in this plan must be close variations of these familiar meals (same core dish, minor ingredient swap or macro adjustment) rather than entirely new recipes. This reduces the risk of unfamiliar, low-confidence cooking.'
+    : '';
+
+  const leftoverRule = (d.leftovers && d.leftovers.toLowerCase().indexOf('no —') !== 0 && d.leftovers.trim())
+    ? '\n13. LEFTOVER STRATEGY: ' + d.leftovers.trim() + '. For the dinners designated for leftovers, scale that dinner\'s portions to ' + (parseInt(d.household) || 1) + ' + 2 extra servings so there is confidently enough food for the next day without additional cooking. Explicitly note in the recipe title or a short note which dinners are leftover-designated and what to do with the extra portion (e.g. "makes extra for tomorrow\'s lunch").'
+    : '';
+
   const systemPrompt =
     'You are an elite registered dietitian generating structured meal plans. Output ONLY the meal plan in the exact format specified. No commentary, no reasoning, no calculations, no self-correction text.\n\n' +
     'RULES YOU NEVER BREAK:\n\n' +
@@ -311,7 +328,10 @@ function buildPrompt(d) {
     (d.hardAllergies ? '\n   BANNED: ' + d.hardAllergies + ' — never appear anywhere.' : '') +
     kosherRule +
     veganRule +
-    lowCarbRule;
+    lowCarbRule +
+    skillRule +
+    familiarMealsRule +
+    leftoverRule;
 
   const dietEnforcement =
     (isVegan ? 'VEGAN STRICT: Only tofu, tempeh, edamame, legumes, seeds, plant protein, nutritional yeast. Zero animal products.\n' : '') +
@@ -345,6 +365,8 @@ function buildPrompt(d) {
     'SKILL: ' + (d.skill || 'Beginner') + '\n' +
     'REPEATS OK: ' + (d.mealRepeat || 'Somewhat') + '\n' +
     'TRACKS: ' + (d.tracking || 'No') + '\n' +
+    (d.familiarMeals && d.familiarMeals.trim() ? 'FAMILIAR MEALS (anchor at least half of dinners to these): ' + d.familiarMeals.trim() + '\n' : '') +
+    (d.leftovers ? 'LEFTOVERS: ' + d.leftovers + '\n' : '') +
     (d.healthContext ? 'HEALTH CONTEXT: ' + d.healthContext + '\n' : '') +
     (d.notes ? 'NOTES: ' + d.notes + '\n' : '') +
     '\nCALORIE TARGETS (hard limits — size portions to meet these exactly):\n' +
