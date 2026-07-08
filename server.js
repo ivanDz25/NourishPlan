@@ -305,7 +305,7 @@ function buildPrompt(d) {
     : '';
 
   const leftoverRule = (d.leftovers && d.leftovers.toLowerCase().indexOf('no —') !== 0 && d.leftovers.trim())
-    ? '\n13. LEFTOVER STRATEGY: ' + d.leftovers.trim() + '. For the dinners designated for leftovers, scale that dinner\'s portions to ' + (parseInt(d.household) || 1) + ' + 2 extra servings so there is confidently enough food for the next day without additional cooking. Explicitly note in the recipe title or a short note which dinners are leftover-designated and what to do with the extra portion (e.g. "makes extra for tomorrow\'s lunch").'
+    ? '\n13. LEFTOVER STRATEGY: ' + d.leftovers.trim() + '. For the dinners designated for leftovers, scale that dinner\'s portions to ' + (parseInt(d.household) || 1) + ' + 2 extra servings so there is confidently enough food for the next day without additional cooking. Note the leftover designation in the meal title (e.g. "makes extra for tomorrow\'s lunch"). CRITICAL: A leftover-designated meal follows the EXACT SAME required format as every other meal — Ingredients, Instructions, Macros line, Prep time line. The Macros line is NEVER optional and NEVER omitted, even when the title is longer or includes a leftover note. Macros for a leftover-designated meal reflect ONE serving, not the scaled batch.'
     : '';
 
   const systemPrompt =
@@ -322,6 +322,7 @@ function buildPrompt(d) {
     (hasSnack ? '   Snack: 200 cal exactly\n' : '') +
     '   Size every ingredient portion to hit these targets BEFORE writing. Never write a meal at standard recipe size.\n' +
     '\n4. ONE VERSION ONLY: Write each meal label EXACTLY ONCE per day. No drafts, no iterations, no multiple versions. The first version written is the only version.\n' +
+    '\n4b. EVERY MEAL HAS A MACROS LINE: No exceptions. Every single meal, in every single day, must include a "Macros: [X] cal | [X]g protein | [X]g carbs | [X]g fat" line — regardless of title length, leftover notes, or any other annotation. Never skip it.\n' +
     '\n5. NO REASONING IN OUTPUT: Never write calculations, totals, self-corrections, or commentary in the output. The output contains ONLY meal plan content.\n' +
     '\n6. COMPLETE ALL DAYS: Write all ' + d.days + ' days before the grocery list.\n' +
     '\n7. PLAIN TEXT ONLY: No markdown, no asterisks, no bold, no # headers.' +
