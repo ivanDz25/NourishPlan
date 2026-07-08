@@ -249,6 +249,20 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
           <div style="font-size:12px;color:var(--muted)">$500</div>
         </div>
       </div>
+      <div class="field">
+        <label>Meals you already make and like</label>
+        <div class="hint">List 5-10 dinners your household already cooks regularly. We'll build variations and additions around these instead of starting from scratch.</div>
+        <textarea id="familiarMeals" placeholder="e.g. spaghetti with meat sauce, chicken stir fry, tacos, sheet pan chicken and veggies, turkey chili" style="min-height:80px"></textarea>
+      </div>
+      <div class="field">
+        <label>Want built-in leftovers?</label>
+        <div class="hint">Scale some dinners up so there's food ready the next day without extra cooking.</div>
+        <select id="leftovers">
+          <option value="No — size portions exactly">No — size portions exactly</option>
+          <option value="Yes — 2-3 nights/week should have leftovers">Yes — 2-3 nights/week should have leftovers</option>
+          <option value="Yes — every dinner should have leftovers">Yes — every dinner should have leftovers</option>
+        </select>
+      </div>
     </div>
 
     <div class="form-block">
@@ -365,6 +379,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:1.5rem
     <div class="submit-wrap">
       <button type="submit" class="submit-btn" id="submitBtn">Generate my meal plan</button>
       <p class="submit-note">Your plan generates in about 30 seconds. First week is free.</p>
+      <p id="draftSavedNote" style="font-size:12px;color:var(--moss);margin-top:6px;opacity:0;transition:opacity 0.3s">✓ Draft saved — come back anytime and pick up where you left off</p>
     </div>
   </form>
 </section>
@@ -396,11 +411,54 @@ function updateBudget(v) {
   document.getElementById('budgetDisplay').textContent = '$' + v;
 }
 
+var FORM_FIELDS = ['name','email','age','sex','height','weight','activity','zipCode','household','meals','days','skill','dislikes','notes','biggestMeal','mealRepeat','healthContext','tracking','hardAllergies','calorieTarget','familiarMeals','leftovers'];
+
+function showDraftSaved() {
+  var el = document.getElementById('draftSavedNote');
+  if (!el) return;
+  el.style.opacity = '1';
+  clearTimeout(showDraftSaved._t);
+  showDraftSaved._t = setTimeout(function() { el.style.opacity = '0'; }, 1800);
+}
+
+function saveFormState() {
+  try {
+    var s = {};
+    FORM_FIELDS.forEach(function(id) { var el = document.getElementById(id); if (el) s[id] = el.value; });
+    s.budget = document.getElementById('budgetSlider').value;
+    var g = document.querySelector('input[name=goal]:checked');
+    var m = document.querySelector('input[name=macro]:checked');
+    s.goal = g ? g.value : '';
+    s.macro = m ? m.value : '';
+    s.restrictions = Array.from(document.querySelectorAll('input[name=restrictions]:checked')).map(function(x) { return x.value; });
+    s.cuisine = Array.from(document.querySelectorAll('input[name=cuisine]:checked')).map(function(x) { return x.value; });
+    s.proteins = Array.from(document.querySelectorAll('input[name=proteins]:checked')).map(function(x) { return x.value; });
+    s.equipment = Array.from(document.querySelectorAll('input[name=equipment]:checked')).map(function(x) { return x.value; });
+    localStorage.setItem('np_form', JSON.stringify(s));
+    showDraftSaved();
+  } catch(e) {}
+}
+
+function loadFormState() {
+  try {
+    var s = JSON.parse(localStorage.getItem('np_form') || '{}');
+    FORM_FIELDS.forEach(function(id) { var el = document.getElementById(id); if (el && s[id]) el.value = s[id]; });
+    if (s.budget) { document.getElementById('budgetSlider').value = s.budget; updateBudget(s.budget); }
+    if (s.goal) { var g = document.querySelector('input[name=goal][value="' + s.goal + '"]'); if (g) g.checked = true; }
+    if (s.macro) { var m = document.querySelector('input[name=macro][value="' + s.macro + '"]'); if (m) m.checked = true; }
+    (s.restrictions || []).forEach(function(v) { var el = document.querySelector('input[name=restrictions][value="' + v + '"]'); if (el) el.checked = true; });
+    (s.cuisine || []).forEach(function(v) { var el = document.querySelector('input[name=cuisine][value="' + v + '"]'); if (el) el.checked = true; });
+    (s.proteins || []).forEach(function(v) { var el = document.querySelector('input[name=proteins][value="' + v + '"]'); if (el) el.checked = true; });
+    (s.equipment || []).forEach(function(v) { var el = document.querySelector('input[name=equipment][value="' + v + '"]'); if (el) el.checked = true; });
+  } catch(e) {}
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  localStorage.removeItem('np_form');
+  loadFormState();
   document.getElementById('budgetSlider').addEventListener('input', function() {
     updateBudget(this.value);
   });
+  document.getElementById('mealForm').addEventListener('change', saveFormState);
 });
 
 var LOADING_MSGS = [
@@ -692,7 +750,9 @@ async function handleSubmit(e) {
     dislikes: document.getElementById('dislikes').value,
     notes: document.getElementById('notes').value,
     healthContext: document.getElementById('healthContext').value,
-    calorieTarget: document.getElementById('calorieTarget').value || ''
+    calorieTarget: document.getElementById('calorieTarget').value || '',
+    familiarMeals: document.getElementById('familiarMeals').value || '',
+    leftovers: document.getElementById('leftovers').value
   };
 
   showLoading();
@@ -705,6 +765,7 @@ async function handleSubmit(e) {
     var data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Generation failed');
     showResults(data.plan, clientData);
+    try { localStorage.removeItem('np_form'); } catch(e) {}
   } catch(err) { showError(err.message); }
 }
 </script>
